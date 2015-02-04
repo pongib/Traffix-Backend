@@ -1,53 +1,84 @@
-/*
-	Directive by HTML5 UP
-	html5up.net | @n33co
-	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
-*/
+$(function() {
+            $(".knob").knob({
+                /*change : function (value) {
+                    //console.log("change : " + value);
+                },
+                release : function (value) {
+                    console.log("release : " + value);
+                },
+                cancel : function () {
+                    console.log("cancel : " + this.value);
+                },*/
+                draw : function () {
+                    // "tron" case
+                    if(this.$.data('skin') == 'tron') {
 
-(function($) {
+                        var a = this.angle(this.cv)  // Angle
+                            , sa = this.startAngle          // Previous start angle
+                            , sat = this.startAngle         // Start angle
+                            , ea                            // Previous end angle
+                            , eat = sat + a                 // End angle
+                            , r = true;
 
-	skel.init({
-		reset: 'full',
-		breakpoints: {
-			global:		{ range: '*', href: 'css/style.css', containers: '51em', grid: { gutters: 30 } },
-			wide:		{ range: '-1680', href: 'css/style-wide.css' },
-			normal:		{ range: '-1280', href: 'css/style-normal.css', containers: '48em' },
-			narrow:		{ range: '-980', href: 'css/style-narrow.css', containers: '95%', grid: { gutters: 30 } },
-			narrower:	{ range: '-840', href: 'css/style-narrower.css', containers: '95%!', grid: { gutters: 20 } },
-			mobile:		{ range: '-736', href: 'css/style-mobile.css', containers: '90%!', grid: { gutters: 20 }, viewport: { scalable: false } },
-			mobilep:	{ range: '-480', href: 'css/style-mobilep.css', containers: '100%!' }
-		}
-	});
+                        this.g.lineWidth = this.lineWidth;
 
-	$(function() {
+                        this.o.cursor
+                            && (sat = eat - 0.3)
+                            && (eat = eat + 0.3);
 
-		var	$window = $(window),
-			$body = $('body');
+                        if (this.o.displayPrevious) {
+                            ea = this.startAngle + this.angle(this.value);
+                            this.o.cursor
+                                && (sa = ea + 0.3)
+                                && (ea = ea - 0.3);
+                            this.g.beginPath();
+                            this.g.strokeStyle = this.previousColor;
+                            this.g.arc(this.xy, this.xy, this.radius - this.lineWidth, sa, ea, false);
+                            this.g.stroke();
+                        }
 
-		// Disable animations/transitions until the page has loaded.
-			$body.addClass('is-loading');
+                        this.g.beginPath();
+                        this.g.strokeStyle = r ? this.o.fgColor : this.fgColor ;
+                        this.g.arc(this.xy, this.xy, this.radius - this.lineWidth, sat, eat, false);
+                        this.g.stroke();
 
-			$window.on('load', function() {
-				$body.removeClass('is-loading');
-			});
+                        this.g.lineWidth = 2;
+                        this.g.beginPath();
+                        this.g.strokeStyle = this.o.fgColor;
+                        this.g.arc(this.xy, this.xy, this.radius - this.lineWidth + 1 + this.lineWidth * 2 / 3, 0, 2 * Math.PI, false);
+                        this.g.stroke();
 
-		// Forms (IE<10).
-			var $form = $('form');
-			if ($form.length > 0) {
+                        return false;
+                    }
+                }
+            });
 
-				$form.find('.form-button-submit')
-					.on('click', function() {
-						$(this).parents('form').submit();
-						return false;
-					});
-
-				if (skel.vars.IEVersion < 10) {
-					$.fn.n33_formerize=function(){var _fakes=new Array(),_form = $(this);_form.find('input[type=text],textarea').each(function() { var e = $(this); if (e.val() == '' || e.val() == e.attr('placeholder')) { e.addClass('formerize-placeholder'); e.val(e.attr('placeholder')); } }).blur(function() { var e = $(this); if (e.attr('name').match(/_fakeformerizefield$/)) return; if (e.val() == '') { e.addClass('formerize-placeholder'); e.val(e.attr('placeholder')); } }).focus(function() { var e = $(this); if (e.attr('name').match(/_fakeformerizefield$/)) return; if (e.val() == e.attr('placeholder')) { e.removeClass('formerize-placeholder'); e.val(''); } }); _form.find('input[type=password]').each(function() { var e = $(this); var x = $($('<div>').append(e.clone()).remove().html().replace(/type="password"/i, 'type="text"').replace(/type=password/i, 'type=text')); if (e.attr('id') != '') x.attr('id', e.attr('id') + '_fakeformerizefield'); if (e.attr('name') != '') x.attr('name', e.attr('name') + '_fakeformerizefield'); x.addClass('formerize-placeholder').val(x.attr('placeholder')).insertAfter(e); if (e.val() == '') e.hide(); else x.hide(); e.blur(function(event) { event.preventDefault(); var e = $(this); var x = e.parent().find('input[name=' + e.attr('name') + '_fakeformerizefield]'); if (e.val() == '') { e.hide(); x.show(); } }); x.focus(function(event) { event.preventDefault(); var x = $(this); var e = x.parent().find('input[name=' + x.attr('name').replace('_fakeformerizefield', '') + ']'); x.hide(); e.show().focus(); }); x.keypress(function(event) { event.preventDefault(); x.val(''); }); });  _form.submit(function() { $(this).find('input[type=text],input[type=password],textarea').each(function(event) { var e = $(this); if (e.attr('name').match(/_fakeformerizefield$/)) e.attr('name', ''); if (e.val() == e.attr('placeholder')) { e.removeClass('formerize-placeholder'); e.val(''); } }); }).bind("reset", function(event) { event.preventDefault(); $(this).find('select').val($('option:first').val()); $(this).find('input,textarea').each(function() { var e = $(this); var x; e.removeClass('formerize-placeholder'); switch (this.type) { case 'submit': case 'reset': break; case 'password': e.val(e.attr('defaultValue')); x = e.parent().find('input[name=' + e.attr('name') + '_fakeformerizefield]'); if (e.val() == '') { e.hide(); x.show(); } else { e.show(); x.hide(); } break; case 'checkbox': case 'radio': e.attr('checked', e.attr('defaultValue')); break; case 'text': case 'textarea': e.val(e.attr('defaultValue')); if (e.val() == '') { e.addClass('formerize-placeholder'); e.val(e.attr('placeholder')); } break; default: e.val(e.attr('defaultValue')); break; } }); window.setTimeout(function() { for (x in _fakes) _fakes[x].trigger('formerize_sync'); }, 10); }); return _form; };
-					$form.n33_formerize();
-				}
-
-			}
-
-	});
-
-})(jQuery);
+            // Example of infinite knob, iPod click wheel
+            var v, up=0,down=0,i=0
+                ,$idir = $("div.idir")
+                ,$ival = $("div.ival")
+                ,incr = function() { i++; $idir.show().html("+").fadeOut(); $ival.html(i); }
+                ,decr = function() { i--; $idir.show().html("-").fadeOut(); $ival.html(i); };
+            $("input.infinite").knob(
+                                {
+                                min : 0
+                                , max : 20
+                                , stopper : false
+                                , change : function () {
+                                                if(v > this.cv){
+                                                    if(up){
+                                                        decr();
+                                                        up=0;
+                                                    }else{up=1;down=0;}
+                                                } else {
+                                                    if(v < this.cv){
+                                                        if(down){
+                                                            incr();
+                                                            down=0;
+                                                        }else{down=1;up=0;}
+                                                    }
+                                                }
+                                                v = this.cv;
+                                            }
+                                });
+        });
