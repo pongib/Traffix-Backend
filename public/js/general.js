@@ -8,7 +8,7 @@ $(window).load(function() {
 
 
 //enter the count down date using the format year, month, day, time:time
-$(".count-down").ccountdown(2015,5,1,'22:59');
+$(".count-down").ccountdown(2015, 3, 15, '23:59');
 
 // Utilizing the Modernizr object created to implement placeholder functionality
 function hasPlaceholderSupport() {
