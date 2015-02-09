@@ -4,11 +4,13 @@ var favicon = require('static-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-
+var mongoose = require('mongoose');
+var fs = require('fs');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var geolocation = require('./routes/geolocation');
-
+var mongoTest = require('./routes/mongoTestGet');
+//var connection = require('./mongoConnection/connectionAndReadSchema');
 var app = express();
 
 // view engine setup
@@ -20,11 +22,26 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+// app.use(connection.connect());
+app.use('/mongo', mongoTest);
 
-app.use('/', express.static(path.join(__dirname, 'public')));
-app.use('/xxx', routes);
-app.use('/users', users);
-app.use('/geolocation', geolocation);
+
+mongoose.connect('mongodb://localhost/traffix');
+
+fs.readdirSync(__dirname + '/models').forEach(function(filename){
+    if(~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
+});
+
+
+// app.use('/xxx', routes);
+// app.use('/users', users);
+// app.use('/geolocation', geolocation);
+
+console.log("server start!");
+
+
+
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {
     var err = new Error('Not Found');
