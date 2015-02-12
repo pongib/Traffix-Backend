@@ -58,7 +58,7 @@ router.get('/busstop', function(req, res){
 
 router.get('/findbusstop', function(req, res){
     mongoose.model('busStop').find({busLine: req.param('line')}, function(err, result){
-        res.send(result);
+        res.jsonp(result);
     });
 });
 module.exports = router;
