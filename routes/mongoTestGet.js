@@ -4,9 +4,10 @@ var router = express.Router();
 
 router.get('/money', function(req, res){
     mongoose.model('salary').find(function(err, salary){
-        res.send(salary);
+        res.jsonp(salary);
     });
 });
+
 
 router.get('/salary/:money/:name', function(req, res){
     mongoose.model('salary').create({money: req.param('money') , name: req.params.name}, function(err, small){
@@ -35,9 +36,10 @@ router.get('/chat/:msg', function(req, res){
 });
 
 router.get('/chatX', function(req, res){
-    mongoose.model('chatX').find(function(err, chat){
-        res.send(chat);
-    });
+    res.jsonp({name: 'pong'});
+    // mongoose.model('chatX').find(function(err, chat){
+    //     res.send(chat);
+    // });
 });
 
 router.get('/chat', function(req, res){
@@ -46,5 +48,17 @@ router.get('/chat', function(req, res){
     });
 });
 
+router.get('/busstop', function(req, res){
+    console.log("line = "+req.param('line')+" busstop = "+req.param('busStopName'));
+    mongoose.model('busStop').create({busLine: [req.param('line')], busStopName: req.param('busStopName')}, function(err, busStop){
+        if (err) return handleError(err);
+        res.send("add to collection complete");
+    });
+});
 
+router.get('/findbusstop', function(req, res){
+    mongoose.model('busStop').find({busLine: 141}, function(err, result){
+        res.send(result);
+    });
+});
 module.exports = router;
