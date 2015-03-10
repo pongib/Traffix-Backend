@@ -11,6 +11,12 @@ var users = require('./routes/users');
 var geolocation = require('./routes/geolocation');
 var mongoTest = require('./routes/mongoTestGet');
 //var connection = require('./mongoConnection/connectionAndReadSchema');
+var googleMapApi = require('./routes/googlemap'); 
+var busStopDBApi = require('./api/busStop');
+//practice mongo db
+var testBeer = require('./practice/beer');
+
+var port = process.env.PORT || 9000;
 var app = express();
 
 // view engine setup
@@ -26,7 +32,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 // app.use(connection.connect());
 app.use('/mongo', mongoTest);
-
+app.use('/gmapi', googleMapApi);
+// app.use('/api', testBeer);
+app.use('/api', busStopDBApi);
 
 mongoose.connect('mongodb://localhost/traffix');
 
@@ -39,7 +47,15 @@ fs.readdirSync(__dirname + '/models').forEach(function(filename){
 // app.use('/users', users);
 // app.use('/geolocation', geolocation);
 
-console.log("server start!");
+// app.post('/api/user', function(req, res){
+//     console.log(req.body.id);
+//     res.send("id = "+req.body.id);
+// });
+
+
+// console.log("server start!");
+
+
 
 
 
@@ -75,4 +91,8 @@ app.use(function(err, req, res, next) {
 });
 
 
-module.exports = app;
+// module.exports = app;
+
+app.listen(port);
+
+console.log('Server started! At http://localhost:' + port);

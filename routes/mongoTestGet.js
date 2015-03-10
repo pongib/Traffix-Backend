@@ -18,7 +18,7 @@ router.get('/salary/:money/:name', function(req, res){
 
 router.get('/users', function(req, res){
     mongoose.model('users').find(function(err, users){
-        res.send(users);
+        res.json(users);
     });
 });
 
@@ -61,4 +61,20 @@ router.get('/findbusstop', function(req, res){
         res.jsonp(result);
     });
 });
+
+router.post('/geolocation', function(req, res){
+    mongoose.model('geolocation').create({lat: req.param('lat'), lng: req.param('lng')}, function(err, result){
+        if (err) res.send(err);
+        console.log("lat: "+req.param('lat')+" lng: "+req.param('lng'));
+        console.log(req.body.lat);
+        res.send("receive OK "+result);
+    });
+});
+
+router.get('/findgeolocation', function(req, res){
+    mongoose.model('geolocation').find({lat: req.param('lat'), lng: req.param('lng')}, function(err, result){
+        res.send(result);
+    });
+});
+
 module.exports = router;
