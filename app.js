@@ -6,6 +6,8 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var fs = require('fs');
+var gm = require('googlemaps');
+var config = require('./api/config'); //config for google map
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var geolocation = require('./routes/geolocation');
@@ -13,6 +15,8 @@ var mongoTest = require('./routes/mongoTestGet');
 //var connection = require('./mongoConnection/connectionAndReadSchema');
 var googleMapApi = require('./routes/googlemap'); 
 var busStopDBApi = require('./api/busStop');
+var estimateTimeApi = require('./api/distance');
+var busGeoDBApi = require('./api/busGeolocation');
 //practice mongo db
 var testBeer = require('./practice/beer');
 
@@ -34,7 +38,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/mongo', mongoTest);
 app.use('/gmapi', googleMapApi);
 // app.use('/api', testBeer);
-app.use('/api', busStopDBApi);
+app.use('/api/bus-stop', busStopDBApi);
+app.use('/api/estimate', estimateTimeApi);
+app.use('/api/bus-geolocation', busGeoDBApi);
 
 mongoose.connect('mongodb://localhost/traffix');
 
@@ -42,6 +48,10 @@ fs.readdirSync(__dirname + '/models').forEach(function(filename){
     if(~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
 });
 
+// gm.config({
+//     key: "AIzaSyB_PaLNPwl9zkFtGtOQ1_vhNC7WpBy_Qyk"
+// });
+// gm.config('google-private-key', 'AIzaSyB_PaLNPwl9zkFtGtOQ1_vhNC7WpBy_Qyk');
 
 // app.use('/xxx', routes);
 // app.use('/users', users);

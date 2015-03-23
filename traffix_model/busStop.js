@@ -4,7 +4,7 @@ var busStopSchema = mongoose.Schema({
 	name: String,
 	line: [Number],
 	loc: {
-		type: String,
+		type: { type: String },
 		coordinates: [Number]
 	}
 });

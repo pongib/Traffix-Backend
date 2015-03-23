@@ -15,7 +15,7 @@ router.get('/distance', function(req, res){
 	});
 });
 
-router.get('/estimate', function(req, res){
+router.get('/estimate/:from/:to', function(req, res){
 	var options = {
 		sensor: 'false',
 		mode: 'transit',
@@ -29,9 +29,11 @@ router.get('/estimate', function(req, res){
 		region: 'null'
 	};
 	var departureNow = Math.floor((new Date()).getTime()/1000);
-	gm.directions(req.param('from'), req.param('to'), function(err, data){
+
+	console.log(req.params.to);
+	gm.directions(req.params.from, req.params.to, function(err, data){
   		res.send(data);
-	}, 'false', 'transit', null, null, null, null, null, departureNow);
+	}, 'false', 'transit', null, null, null, null, null, departureNow, null, 'th');
 });
 
 
