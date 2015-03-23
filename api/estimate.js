@@ -86,6 +86,58 @@ router.get('/near/2/:busStop/:firstLine/:secondLine', function (req, res){
 	    }); 
 });	  
 				
+router.get('/near/3/:busStop/:firstLine/:secondLine/:thirdLine', function (req, res){	
 
+		BusGeo.find({ line: req.params.firstLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
+	    .exec(function (err, first){
+	    	if(err) res.send(err);
+	    	result.push(first[0]);
+
+	    	BusGeo.find({ line: req.params.secondLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
+	    	.exec(function (err, second){
+	    		if(err) res.send(err);
+	    		result.push(second[0]);
+
+	    			BusGeo.find({ line: req.params.thirdLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
+				    .exec(function (err, third){
+				    	if(err) res.third(err);
+				    	result.push(third[0]);
+
+			    		var currentBus = result[0].loc.coordinates[1]+','+result[0].loc.coordinates[0]+'|'+
+			    			result[1].loc.coordinates[1]+','+result[1].loc.coordinates[0]+'|'+
+			    			result[2].loc.coordinates[1]+','+result[2].loc.coordinates[0];
+			    		// res.send(result);
+			    		gm.distance(
+						currentBus, //origin
+						req.params.busStop,  //destination
+						function (err, estimate){
+						  if(err) res.send(err); 
+						  if(estimate.status == "OK"){
+						  	res.json({
+							  	status: estimate.status,
+							  	origin: currentBus,
+							  	busstop: req.params.busStop,
+							  	line1: {
+							  		line: parseInt(req.params.firstLine),
+							  		distance: estimate.rows[0].elements[0].distance.value,
+							  		duration: estimate.rows[0].elements[0].duration.value
+							  	},
+							  	line2: {
+							  		line: parseInt(req.params.secondLine),
+							  		distance: estimate.rows[1].elements[0].distance.value,
+							  		duration: estimate.rows[1].elements[0].duration.value
+							  	},
+							  	line3: {
+							  		line: parseInt(req.params.thirdLine),
+							  		distance: estimate.rows[2].elements[0].distance.value,
+							  		duration: estimate.rows[2].elements[0].duration.value
+							  	}
+						  	});
+						  }else res.send(estimate);				  
+						}, false, "transit");
+				});
+			});
+	    }); 
+});	  
 
 module.exports = router;
