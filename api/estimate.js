@@ -29,14 +29,25 @@ router.get('/near/2/:busStop/:firstLine/:secondLine', function (req, res){
 	    		gm.distance(
 				currentBus, //origin
 				req.params.busStop,  //destination
-				function (err, result){
+				function (err, estimate){
 				  if(err) res.send(err); 
-
-				  res.json({
-				  	origin: currentBus,
-				  	busstop: req.params.busStop,
-				  	data: result
-				  });
+				  if(estimate.status == "OK"){
+				  	res.json({
+					  	status: estimate.status,
+					  	origin: currentBus,
+					  	busstop: req.params.busStop,
+					  	line1: {
+					  		line: parseInt(req.params.firstLine),
+					  		distance: estimate.rows[0].elements[0].distance.value,
+					  		duration: estimate.rows[0].elements[0].duration.value
+					  	},
+					  	line2: {
+					  		line: parseInt(req.params.secondLine),
+					  		distance: estimate.rows[1].elements[0].distance.value,
+					  		duration: estimate.rows[1].elements[0].duration.value
+					  	}
+				  	});
+				  }else res.send(estimate);				  
 				}, false, "transit");
 			});
 	    }); 

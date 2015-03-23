@@ -15,7 +15,7 @@ var mongoTest = require('./routes/mongoTestGet');
 //var connection = require('./mongoConnection/connectionAndReadSchema');
 var googleMapApi = require('./routes/googlemap'); 
 var busStopDBApi = require('./api/busStop');
-var estimateTimeApi = require('./api/distance');
+var estimateTimeApi = require('./api/estimate');
 var busGeoDBApi = require('./api/busGeolocation');
 //practice mongo db
 var testBeer = require('./practice/beer');
