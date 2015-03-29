@@ -11,11 +11,14 @@ var result = [];
 // .exec(callback)
 
 
-router.get('/near/1/:busStop/:firstLine', function (req, res){	
+router.get('/near/1/:busStop/:firstLine/:tag', function (req, res){	
+	var tags = req.params.tag.split(",");
 
-	BusGeo.find({ line: req.params.firstLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
-	.exec(function (err, first){
-		if(err) res.send(err);
+	BusGeo.find().and([{ line: req.params.firstLine }, { tag: { $nin : tags }}])
+	.where('accuracy').lte(20)
+	.sort({accuracy: 'asc'}).limit(100)
+	.exec(function (err, first){	
+		if(err) res.send("err : "+err);
 		result.push(first[0]);
 
 		var currentBus = result[0].loc.coordinates[1]+','+result[0].loc.coordinates[0];
@@ -43,14 +46,17 @@ router.get('/near/1/:busStop/:firstLine', function (req, res){
 
 });	  
 
-router.get('/near/2/:busStop/:firstLine/:secondLine', function (req, res){	
+router.get('/near/2/:busStop/:firstLine/:secondLine/:tag', function (req, res){	
+		var tags = req.params.tag.split(",");
 
-		BusGeo.find({ line: req.params.firstLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
+		BusGeo.find().and([{ line: req.params.firstLine }, { tag: { $nin : tags }}])
+		.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
 	    .exec(function (err, first){
 	    	if(err) res.send(err);
 	    	result.push(first[0]);
 
-	    	BusGeo.find({ line: req.params.secondLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
+	    	BusGeo.find().and([{ line: req.params.secondLine }, { tag: { $nin : tags }}])
+	    	.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
 	    	.exec(function (err, second){
 	    		if(err) res.send(err);
 	    		result.push(second[0]);
@@ -86,20 +92,24 @@ router.get('/near/2/:busStop/:firstLine/:secondLine', function (req, res){
 	    }); 
 });	  
 				
-router.get('/near/3/:busStop/:firstLine/:secondLine/:thirdLine', function (req, res){	
+router.get('/near/3/:busStop/:firstLine/:secondLine/:thirdLine/:tag', function (req, res){	
+		var tags = req.params.tag.split(",");
 
-		BusGeo.find({ line: req.params.firstLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
-	    .exec(function (err, first){
+		BusGeo.find().and([{ line: req.params.firstLine }, { tag: { $nin : tags }}])
+		.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
+	    .exec(function (err, first){	    	
 	    	if(err) res.send(err);
 	    	result.push(first[0]);
 
-	    	BusGeo.find({ line: req.params.secondLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
-	    	.exec(function (err, second){
+	    	BusGeo.find().and([{ line: req.params.secondLine }, { tag: { $nin : tags }}])
+	    	.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
+	    	.exec(function (err, second){	    
 	    		if(err) res.send(err);
 	    		result.push(second[0]);
 
-	    			BusGeo.find({ line: req.params.thirdLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
-				    .exec(function (err, third){
+	    			BusGeo.find().and([{ line: req.params.thirdLine }, { tag: { $nin : tags }}])
+	    			.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
+				    .exec(function (err, third){				   
 				    	if(err) res.third(err);
 				    	result.push(third[0]);
 
