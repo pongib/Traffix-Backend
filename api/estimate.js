@@ -14,9 +14,9 @@ var result = [];
 router.get('/near/1/:busStop/:firstLine', function (req, res){	
 
 	BusGeo.find({ line: req.params.firstLine }).where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
-	.exec(function (err, second){
+	.exec(function (err, first){
 		if(err) res.send(err);
-		result.push(second[0]);
+		result.push(first[0]);
 
 		var currentBus = result[0].loc.coordinates[1]+','+result[0].loc.coordinates[0];
 
@@ -27,7 +27,7 @@ router.get('/near/1/:busStop/:firstLine', function (req, res){
 		function (err, estimate){
 		  if(err) res.send(err); 
 		  if(estimate.status == "OK"){
-		  	res.json({
+		  	res.jsonp({
 			  	status: estimate.status,
 			  	origin: currentBus,
 			  	busstop: req.params.busStop,
@@ -65,7 +65,7 @@ router.get('/near/2/:busStop/:firstLine/:secondLine', function (req, res){
 				function (err, estimate){
 				  if(err) res.send(err); 
 				  if(estimate.status == "OK"){
-				  	res.json({
+				  	res.jsonp({
 					  	status: estimate.status,
 					  	origin: currentBus,
 					  	busstop: req.params.busStop,
@@ -113,7 +113,7 @@ router.get('/near/3/:busStop/:firstLine/:secondLine/:thirdLine', function (req, 
 						function (err, estimate){
 						  if(err) res.send(err); 
 						  if(estimate.status == "OK"){
-						  	res.json({
+						  	res.jsonp({
 							  	status: estimate.status,
 							  	origin: currentBus,
 							  	busstop: req.params.busStop,

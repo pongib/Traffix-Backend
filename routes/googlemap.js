@@ -1,7 +1,23 @@
 var express = require('express');
 var router = express.Router();
 var gm = require('googlemaps');
+var _ = require('underscore');
 // var util = require('util');
+
+// function firstAsync (data, callback) {
+// 	var busLine = [];
+// 	console.log('data = '+data);
+// 	for (var i = 0; i < data.routes.length; i++) {
+// 			for(var j = 0; j < data.routes[i].legs.steps.length; j++){
+// 				if(data.routes[i].legs.steps[j].travel_mode == "TRANSIT"){
+// 					busLine.push(data.routes[i].legs.steps[j].transit_details.line.short_name);
+// 			}				
+// 		}
+// 	}
+// 	console.log('busLine = '+busLine);
+// 	callback(busLine);
+// }
+
 
 router.get('/reversegeo', function(req, res){
 	gm.reverseGeocode(req.param('latlng'), function(err, data){
@@ -9,10 +25,23 @@ router.get('/reversegeo', function(req, res){
 	});
 });
 
-router.get('/distance', function(req, res){
-	gm.distance(req.param('from'), req.param('to'), function(err, data){
-  		res.send(data);
-	});
+// router.get('/distance', function(req, res){
+// 	gm.distance(req.param('from'), req.param('to'), function(err, data){
+//   		res.send(data);
+// 	});
+// });
+router.get('/distance/:from/:to', function (req, res){
+	gm.distance(req.params.from, req.params.to, function (err, estimate){
+		if(err) res.send("err = "+err);
+		if(estimate.status == "OK"){
+		  	var _estimate = {
+			  	status: estimate.status,
+			  	estimate: estimate.rows[0].elements
+		  	};
+		  	res.send(_estimate);
+			console.log(_estimate);	
+		}else res.send(estimate);	
+	}, false, 'transit');
 });
 
 router.get('/estimate/:from/:to', function(req, res){
@@ -29,11 +58,27 @@ router.get('/estimate/:from/:to', function(req, res){
 		region: 'null'
 	};
 	var departureNow = Math.floor((new Date()).getTime()/1000);
-
+	var busLine = [];
 	console.log(req.params.to);
+
 	gm.directions(req.params.from, req.params.to, function(err, data){
-  		res.send(data);
-	}, 'false', 'transit', null, null, null, null, null, departureNow, null, 'th');
+		// res.send(data);
+		data.routes.forEach(function (entries){
+			entries.legs[0].steps.some(function(entry){
+				if(entry.travel_mode == 'TRANSIT'){
+					busLine.push(entry.transit_details.line.short_name);
+					//console.log(busLine);
+					return true; //want to break use some return true use every return false
+				}else return false;
+			});
+		});
+		// unique value in array and sort asc 
+		res.send(_.sortBy(_.uniq(busLine, false), function (num){
+			return num;
+		}));
+		
+
+	}, 'false', 'transit', null, true, null, null, null, departureNow, null, 'th');
 });
 
 
