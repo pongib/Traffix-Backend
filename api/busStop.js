@@ -173,7 +173,7 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 			.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
 			.exec(function (err, first){
 				if(err) res.send(err);
-
+				res.send(first);
 				var currentBus = first[0].loc.coordinates[1]+','+first[0].loc.coordinates[0];
 				console.log("currentBus = "+currentBus+" busStop = "+busStop);
 

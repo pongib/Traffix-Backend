@@ -184,6 +184,52 @@ router.post('/', function (req, res, next){
 	});
 });
 
+// alarm checking
+// test case when reached alarm bus stop
+// {
+// 			"userId": "84a516841ba77a5b4648de2cd0dfcb30ea46dbb4",
+// 			"line": "75",
+// 			"accuracy": 5,
+// 			"speed": 40,
+// 	  		"lng": 100.4967136, 
+// 	  		"lat": 13.6540672,	
+// 			"date": 1426567532014,
+// 			"tag": ["54fff522ea4818acc35289ef"],
+//       	"alarm":  "54fff53fea4818acc35289f0"
+// }   
+
+// test case when not reach alarm bus stop
+ // 	{
+	// 		"userId": "84a516841ba77a5b4648de2cd0dfcb30ea46dbb4",
+	// 		"line": "75",
+	// 		"accuracy": 5,
+	// 		"speed": 40,
+	//   	"lng": 100.4967136, 
+	//   	"lat": 13.6540672,	
+	// 		"date": 1426567532014,
+	// 		"tag": ["54fff522ea4818acc35289ef"],
+    //      "alarm":  "54fff556ea4818acc35289fa"
+	// }    
+
+router.post('/', function (req, res, next){
+	if(req.body.alarm){
+		// check if tag added and found in array 
+		// mean alert passenger  
+		if(_.indexOf(req.body.tag, req.body.alarm) != -1){
+			res.jsonp({
+				status: 'alarm',
+				msg: "Alert user!!"
+			});
+		}else{
+		// in case of not yet destination
+			next();	
+		}
+	}else{
+	// user not set alarm
+		next();	
+	} 
+});
+
 
 router.post('/', function (req, res){
 	
