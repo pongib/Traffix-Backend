@@ -163,12 +163,13 @@ router.post('/', function (req, res, next){
 			coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
 			type: 'Point'
 		},
-		maxDistance: 5,
+		maxDistance: 30,
 		spherical: true
 	}).exec(function (err, result){
 		if(err) res.send(err);	
 		if(result.length >= 1){
 			//check value in array are not duplicate
+			//result 0 because mongo return nearest first
 			if(_.indexOf(req.body.tag, String(result[0]._id)) == -1){
 				req.body.tag.push(String(result[0]._id));
 				next();
@@ -217,9 +218,10 @@ router.post('/', function (req, res, next){
 		// mean alert passenger  
 		if(_.indexOf(req.body.tag, req.body.alarm) != -1){
 			res.jsonp({
-				status: 'alarm',
-				msg: "Alert user!!"
+				status: 'Alarm',
+				msg: "Alert user!! and delete parameter alarm."
 			});
+			next();
 		}else{
 		// in case of not yet destination
 			next();	
@@ -230,6 +232,54 @@ router.post('/', function (req, res, next){
 	} 
 });
 
+// reach destination checking by check tag
+// get destination from when fill line and bus stop
+// front end will save selected _id of bus stop destination
+// and send to backend
+// test case when reach destination 
+// {
+// 			"userId": "84a516841ba77a5b4648de2cd0dfcb30ea46dbb4",
+// 			"line": "75",
+// 			"accuracy": 5,
+// 			"speed": 40,
+// 	  		"lng": 100.4967136, 
+// 	  		"lat": 13.6540672,	
+// 			"date": 1426567532014,
+// 			"tag": ["54fff522ea4818acc35289ef"],
+//       		"destination":  "54fff53fea4818acc35289f0"
+// }   
+
+//in case of not yet destination
+// {
+// 			"userId": "84a516841ba77a5b4648de2cd0dfcb30ea46dbb4",
+// 			"line": "75",
+// 			"accuracy": 5,
+// 			"speed": 40,
+// 	  		"lng": 100.4967136, 
+// 	  		"lat": 13.6540672,	
+// 			"date": 1426567532014,
+// 			"tag": ["54fff522ea4818acc35289ef"],
+//       		"destination":  "54fff552ea4818acc35289f8"
+// } 
+router.post('/', function (req, res, next){
+	if(req.body.destination){
+		// check if tag added and found in array 
+		// mean passenger go out from bus  
+		if(_.indexOf(req.body.tag, req.body.destination) != -1){
+			res.jsonp({
+				status: 'OUT',
+				msg: "Passenger out and delete value parameter line and destination."
+			});
+			next();
+		}else{
+		// in case of not yet destination
+			next();	
+		}
+	}else{
+	// user not set destination
+		next();	
+	} 
+});
 
 router.post('/', function (req, res){
 	
@@ -249,11 +299,13 @@ router.post('/', function (req, res){
 
 	busGeo.save(function (err){
 		if(err) res.send(err);
-
+		// return tag for use in next request time
+		console.log("save to collection completed");
 		res.send({
 			msg: 'save to collection complete',
-			data: busGeo
-		})
+			data: busGeo,
+			tag: busGeo.tag
+		});
 	});
 });
 

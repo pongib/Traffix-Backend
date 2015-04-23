@@ -18,6 +18,8 @@ var busStopDBApi = require('./api/busStop');
 var estimateTimeApi = require('./api/estimate');
 var busGeoDBApi = require('./api/busGeolocation');
 var alarm = require('./api/alarm');
+var place = require('./api/place.js');
+var BMTA = require('./api/bmta');
 //practice mongo db
 var testBeer = require('./practice/beer');
 
@@ -43,6 +45,8 @@ app.use('/api/bus-stop', busStopDBApi);
 app.use('/api/estimate', estimateTimeApi);
 app.use('/api/bus-geolocation', busGeoDBApi);
 app.use('/api/alarm', alarm);
+app.use('/api/place', place);
+app.use('/api/bmta', BMTA);
 
 mongoose.connect('mongodb://localhost/traffix');
 

@@ -21,6 +21,8 @@ router.get('/all', function (req, res){
 });
 
 
+
+
 router.post('/', function (req, res){
 	console.log(req.body);
 	
@@ -57,13 +59,35 @@ router.delete('/:id', function (req, res){
 
 // -------------END Manage Database -----------------------//
 
+//query bus stop with line
+router.get('/:busline', function (req, res){
+	BusStop
+	.find({ line: req.params.busline })
+	.exec(function (err, busStop){
+		if(err) res.send(err);
+		if(busStop.length != 0){
+			res.jsonp({
+				status: 'OK',
+				busstop: busStop
+			});
+		}else {
+			res.jsonp({
+				status: 'NO RESULT',
+				msg: 'Not found bus stop'
+			});
+		}			
+	});
+});
+
+
+
 
 //find near bus stop
 router.get('/findnear/:origin/:destination/:distance', function (req, res){
-	var busLine = []; 
+	var busLine = [], geo = []; 
 	var departureNow = Math.floor((new Date()).getTime()/1000);
 	gm.geocode(req.params.destination, function (err, dest){
-	if(err) res.send(err)
+	if(err) res.send(err);
 	if(dest.status == "ZERO_RESULTS") res.json({"msg": "can not convert geo please fill correct destination"})
 	else {
 	 // console.log(dest.results[0].geometry.location);
@@ -71,20 +95,20 @@ router.get('/findnear/:origin/:destination/:distance', function (req, res){
 	// console.log("destination "+destination +" type "+ typeof(destination) + " origin = "+req.params.origin+" type "+ typeof(req.params.origin) );
 	// to convert string line into array of number of busline
 	// var line = req.params.line.split(',').map(Number); 
-	// console.log(destination);
+	//console.log(destination);
 		gm.directions(req.params.origin, destination, function(err, data){
-
 			async.waterfall([
 				function (callback){
 					data.routes.forEach(function (entries){
 						entries.legs[0].steps.some(function(entry){
 							if(entry.travel_mode == 'TRANSIT'){
 								busLine.push(entry.transit_details.line.short_name);
+								geo.push(entry.end_location);								
 								return true; //want to break use some return true use every return false
 							}else return false;
 						});
 					});
-
+					res.send(geo);
 					// unique value in array and sort asc 
 					var line = _.sortBy(_.uniq(busLine, false), function (num){
 						return num;
@@ -173,7 +197,7 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 			.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
 			.exec(function (err, first){
 				if(err) res.send(err);
-				res.send(first);
+				// res.send(first);
 				var currentBus = first[0].loc.coordinates[1]+','+first[0].loc.coordinates[0];
 				console.log("currentBus = "+currentBus+" busStop = "+busStop);
 
@@ -217,7 +241,7 @@ router.get('/nearest/:position', function (req, res){
 			coordinates: [parseFloat(position[1]), parseFloat(position[0])],
 			type: 'Point'
 		},
-		maxDistance: 5,
+		maxDistance: 30,
 		spherical: true
 	}).exec(function (err, result){
 		if(err) res.send(err);		
