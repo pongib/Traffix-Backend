@@ -65,6 +65,7 @@ router.get('/:busline', function (req, res){
 	.find({ line: req.params.busline })
 	.exec(function (err, busStop){
 		if(err) res.send(err);
+
 		if(busStop.length != 0){
 			res.jsonp({
 				status: 'OK',
@@ -79,69 +80,167 @@ router.get('/:busline', function (req, res){
 	});
 });
 
-
-
-
-//find near bus stop
-router.get('/findnear/:origin/:destination/:distance', function (req, res){
-	var busLine = [], geo = []; 
-	var departureNow = Math.floor((new Date()).getTime()/1000);
-	gm.geocode(req.params.destination, function (err, dest){
-	if(err) res.send(err);
-	if(dest.status == "ZERO_RESULTS") res.json({"msg": "can not convert geo please fill correct destination"})
-	else {
-	 // console.log(dest.results[0].geometry.location);
-	var destination = dest.results[0].geometry.location.lat+','+dest.results[0].geometry.location.lng;
-	// console.log("destination "+destination +" type "+ typeof(destination) + " origin = "+req.params.origin+" type "+ typeof(req.params.origin) );
-	// to convert string line into array of number of busline
-	// var line = req.params.line.split(',').map(Number); 
-	//console.log(destination);
-		gm.directions(req.params.origin, destination, function(err, data){
-			async.waterfall([
-				function (callback){
-					data.routes.forEach(function (entries){
-						entries.legs[0].steps.some(function(entry){
-							if(entry.travel_mode == 'TRANSIT'){
-								busLine.push(entry.transit_details.line.short_name);
-								geo.push(entry.end_location);								
-								return true; //want to break use some return true use every return false
-							}else return false;
-						});
+router.get('/near/destination/:origin/:destination', function (req, res){	
+	async.waterfall([
+		function (callback){
+			gm.geocode(req.params.destination, function (err, dest){
+				if(dest){
+					var destination = dest.results[0].geometry.location.lat+','+dest.results[0].geometry.location.lng;
+				}else {
+					res.jsonp({
+						status: 'ERROR',
+						msg: 'can not convert destination to geo location'
 					});
-					res.send(geo);
-					// unique value in array and sort asc 
-					var line = _.sortBy(_.uniq(busLine, false), function (num){
+				}
+				callback(null, destination);
+			});			
+		},
+		function (geolocation, callback){
+			var departureNow = Math.floor((new Date()).getTime()/1000);
+			var destBusStopGeo = [], busLine = [];
+			gm.directions(req.params.origin, geolocation, function (err, data){
+				// res.send(data.routes);				
+				async.each(data.routes, function (entries, callback){
+					var endDest = {};
+					entries.legs[0].steps.some(function(entry){
+						if(entry.travel_mode == 'TRANSIT'){
+							endDest.line = entry.transit_details.line.short_name;
+							endDest.geolocation = entry.end_location;
+							destBusStopGeo.push(endDest);
+							busLine.push(endDest.line);
+							return true; //want to break use some return true use every return false
+						}else return false;
+					});
+					callback();
+				}, function (err){
+					line = _.sortBy(_.uniq(busLine, false), function (num){
 						return num;
 					}).map(Number);
-					console.log("line = "+line);
-					callback(null, line); 
-				},
-				function (line, callback){
-					var origin = req.params.origin.split(',');
-					BusStop.find({ line: { $in : line }}).where('loc').near({
-						center: { 
-							coordinates: [parseFloat(origin[1]), parseFloat(origin[0])], 
-							type: 'Point' 
-						},
-						maxDistance: parseInt(req.params.distance),
-						spherical: true
-					}).exec(function (err, busStop){
-						if(err) res.send(err);	
-						
-						callback(null, busStop, line);
-					});				
-				}
-			], function (err, result, lineSearch){		
-					res.jsonp({
-						result: result.length,
-						line: lineSearch,
-						data: result 
-					});
-			});
-		}, 'false', 'transit', null, true, null, null, null, departureNow, null, 'th');
-	  }	
+					// res.send(destBusStopGeo);
+					callback(null, destBusStopGeo, line);
+				});
+			}, 'false', 'transit', null, true, null, null, null, departureNow, null, 'th')
+		},
+		function (destBusStopGeo, line, callback){
+			var busArr =  [];
+			async.each(destBusStopGeo, function (entry, callback){
+				var destBusStopGeo = {
+					line: entry.line,
+					dest_geolocation: entry.geolocation
+				};
+				BusStop.find().where('loc').near({
+					center: {
+						coordinates: [parseFloat(entry.geolocation.lng), parseFloat(entry.geolocation.lat)],
+						type: 'Point'
+					},
+					maxDistance: 30,
+					spherical: true
+				}).exec(function (err, result){
+					if(err) res.send(err);
+					if(result.length >= 1){
+						destBusStopGeo.name = result[0].name;
+						destBusStopGeo.tag = result[0]._id;
+						busArr.push(destBusStopGeo);
+					}else {
+						destBusStopGeo.name = "no bus stop result"
+						busArr.push(destBusStopGeo);
+					}
+					callback();				
+				});
+			}, function (err){
+				callback(null, line, busArr);				
+			});	
+		}
+	], function(err, line, busArr){
+		res.jsonp({
+			line: line,
+			data: busArr					
+		});
 	});
 });
+
+//find near bus stop
+router.get('/findnear/:origin/:distance/:line', function (req, res){		
+	var origin = req.params.origin.split(',');
+	var line = req.params.line.split(',');
+	BusStop.find({ line: { $in : line }}).where('loc').near({
+		center: { 
+			coordinates: [parseFloat(origin[1]), parseFloat(origin[0])], 
+			type: 'Point' 
+		},
+		maxDistance: parseInt(req.params.distance),
+		spherical: true
+	}).exec(function (err, busStop){
+		if(err) res.send(err);	
+		res.jsonp({
+			result: busStop.length,
+			line: line,
+			data: busStop 
+		});
+	});								
+});
+//find near bus stop
+// router.get('/findnear/:origin/:destination/:distance', function (req, res){
+// 	var busLine = [], geo = []; 
+// 	var departureNow = Math.floor((new Date()).getTime()/1000);
+// 	gm.geocode(req.params.destination, function (err, dest){
+// 	if(err) res.send(err);
+// 	if(!dest) res.json({"msg": "can not convert geo please fill correct destination"})
+// 	else if(dest){
+// 	 // console.log(dest.results[0].geometry.location);
+// 	var destination = dest.results[0].geometry.location.lat+','+dest.results[0].geometry.location.lng;
+// 	// console.log("destination "+destination +" type "+ typeof(destination) + " origin = "+req.params.origin+" type "+ typeof(req.params.origin) );
+// 	// to convert string line into array of number of busline
+// 	// var line = req.params.line.split(',').map(Number); 
+// 	//console.log(destination);
+// 		gm.directions(req.params.origin, destination, function(err, data){
+// 			async.waterfall([ 
+// 				function (callback){
+// 					data.routes.forEach(function (entries){
+// 						entries.legs[0].steps.some(function(entry){
+// 							if(entry.travel_mode == 'TRANSIT'){
+// 								busLine.push(entry.transit_details.line.short_name);
+// 								geo.push(entry.end_location);								
+// 								return true; //want to break use some return true use every return false
+// 							}else return false;
+// 						});
+// 					});
+
+					
+// 					// res.send(geo);
+// 					// unique value in array and sort asc 
+// 					var line = _.sortBy(_.uniq(busLine, false), function (num){
+// 						return num;
+// 					}).map(Number);
+// 					console.log("line = "+line);
+// 					callback(null, line); 
+// 				},
+// 				function (line, callback){
+// 					var origin = req.params.origin.split(',');
+// 					BusStop.find({ line: { $in : line }}).where('loc').near({
+// 						center: { 
+// 							coordinates: [parseFloat(origin[1]), parseFloat(origin[0])], 
+// 							type: 'Point' 
+// 						},
+// 						maxDistance: parseInt(req.params.distance),
+// 						spherical: true
+// 					}).exec(function (err, busStop){
+// 						if(err) res.send(err);	
+						
+// 						callback(null, busStop, line);
+// 					});				
+// 				}
+// 			], function (err, result, lineSearch){		
+// 					res.jsonp({
+// 						result: result.length,
+// 						line: lineSearch,
+// 						data: result 
+// 					});
+// 			});
+// 		}, 'false', 'transit', null, true, null, null, null, departureNow, null, 'th');
+// 	  }	
+// 	}, null, null, 'th', 'th');
+// });
 
 
 router.get('/linetogo/:destination', function (req, res){
@@ -165,7 +264,7 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 				spherical: true
 			}).exec(function (err, busStop){
 				if(err) res.send(err);
-	
+
 				callback(null, busStop);
 			});			
 		},
@@ -235,17 +334,32 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 
 // find nearest bus stop
 router.get('/nearest/:position', function (req, res){
-	var position = req.params.position.split(',');
+	var position = req.params.position.split(','), line = [];
 	BusStop.find().where('loc').near({
 		center: {
 			coordinates: [parseFloat(position[1]), parseFloat(position[0])],
 			type: 'Point'
 		},
-		maxDistance: 30,
+		maxDistance: 100,
 		spherical: true
 	}).exec(function (err, result){
 		if(err) res.send(err);		
 		res.send(result);	
+		// async.each(result, function (entry, callback){
+		// 	if(entry.line){
+		// 		async.each(entry.line, function (index, callback){
+		// 			line.push(index);
+		// 			callback();
+		// 		}, function (err){
+		// 			callback();
+		// 		});
+		// 	}							
+		// }, function (err){
+		// 	res.json({
+		// 	  status: "Line",
+		// 	  line: _.uniq(line)
+		// 	});
+		// });
 	});
 }); 
 

@@ -16,7 +16,7 @@ router.get('/near/1/:busStop/:firstLine/:tag', function (req, res){
 
 	BusGeo.find().and([{ line: req.params.firstLine }, { tag: { $nin : tags }}])
 	.where('accuracy').lte(20)
-	.sort({accuracy: 'asc'}).limit(100)
+	.sort({accuracy: 'asc'}).limit(10)
 	.exec(function (err, first){	
 		if(err) res.send("err : "+err);
 		result.push(first[0]);

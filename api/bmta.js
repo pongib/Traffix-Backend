@@ -76,16 +76,20 @@ router.get('/search/:name', function (req, res){
 			// if(entry.busstop.search(req.params.name) != -1){
 			// 	line.push(entry.line);
 			// }
-
-			if(req.params.name.search("ซอย") != -1){
-				//req.params.name.replace('ซอย','');
-				// res.send(req.params.name.replace('ซอย',''));
-				if(entry.busstop.search(req.params.name.replace('ซอย','')) != -1){
+			var name = req.params.name;
+			if(name.search("ซอย") == 0 && !isNaN(name.charAt(name.length - 1))){
+				var temp = name.replace("ซอย", '').split(" ");
+				var newName = temp[0] + " ซอย "+ temp[1];
+				if(entry.busstop.search(newName) != -1){
 					line.push(entry.line);
-					console.log(line);
+				}
+			}else {
+				if(entry.busstop.search(name) != -1){
+					line.push(entry.line);
 				}
 			}
 			callback();
+		
 		}, function (err){			
 			res.send(_.sortBy(line, function (num){
 				return num;

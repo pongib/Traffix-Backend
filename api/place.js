@@ -45,40 +45,54 @@ router.get('/radar/:geo/:radius', function (req, res){
 							callback();	
 						}						
 					});								
-				}, function (err){
+				}, function (err){					
 					callback(null, geolocation);
 				});	
 			},
 			function (geolocation, callback){
-				var temp = null, line = [], busStopDetails = [];
+				var temp = null,  busStopDetails = [];
 				fs.readFile('output.json', function(err, data){
 					temp = JSON.parse(data);
 					async.each(geolocation, function (element, callback){
+						var line = [];
 						var busStopDetail = {
 							location: element.location,
 							name: element.name,
 							place_id: element.place_id
-						}
+						};
 						async.each(temp, function (entry, callback){
-							if(element.name.search("ซอย") != -1){
-									element.name.replace('ซอย','');
-								if(entry.busstop.search(element.name) != -1){
-									line.push(entry.line);
-									console.log(line);
-								}
-							}
-							callback();
-						}, function (err){								
-							// console.log(_.sortBy(line, function (num){
-							// 	return num;
-							// }));	
-							busStopDetails.push(busStopDetail);
+							// if(element.name.search("ซอย") != -1){
+							// 		element.name.replace('ซอย','');
+							// 	if(entry.busstop.search(element.name) != -1){
+							// 		line.push(entry.line);
+							// 		console.log(line);
+							// 	}
+							// }
 
+							var name = element.name;
+							if(name.search("ซอย") == 0 && !isNaN(name.charAt(name.length - 1))){
+								var temp = name.replace("ซอย", '').split(" ");
+								var newName = temp[0] + " ซอย "+ temp[1];
+
+								if(entry.busstop.search(newName) != -1){
+									line.push(entry.line);
+								}
+							}else {
+								if(entry.busstop.search(name) != -1){
+									line.push(entry.line);
+								}
+							}							
+							callback();
+						}, function (err){							
+						 	busStopDetail.line = _.sortBy(line, function (num){
+								return num;
+							});	
+							busStopDetails.push(busStopDetail);
 							// res.send(_.sortBy(line, function (num){
 							// 	return num;
 							// }));
 						});
-						callback();
+					callback();
 					}, function (err){
 						callback(null, busStopDetails);
 					});
@@ -105,5 +119,16 @@ router.get('/details/:id/:language', function (req, res){
 	})
 });
 
+router.get('/search/:query/:types', function (req, res){
+	var options = {
+		query: req.params.query,
+		types: req.params.types
+	};
+	gm.placeName(options, function (err, details){
+		if(err) res.send(err);
+
+		res.send(details);
+	})
+});
 
 module.exports = router; 

@@ -120,12 +120,41 @@ router.post('/', function (req, res, next){
 					res.json({
 					  status: "Line",
 					  line: _.uniq(line)
-					})
+					});
 				});
 			}else{
-				res.send({
-				  status: "No Line"
-				});
+				BusStop.find()
+				.where('loc').near({
+					center: {
+						coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
+						type: 'Point'
+					},
+					maxDistance: 100,
+					spherical: true
+				}).exec(function (err, result){
+					if(err) res.send(err);
+					if(result.length >= 1){
+						async.each(result, function (entry, callback){
+							if(entry.line){
+								async.each(entry.line, function (index, callback){
+									line.push(index);
+									callback();
+								}, function (err){
+									callback();
+								});
+							}							
+						}, function (err){
+							res.json({
+							  status: "Line",
+							  line: _.uniq(line)
+							});
+						});
+					}else {
+						res.send({
+				 			status: "No Line"
+						});
+					}
+				});				
 			}		
 		});
 	}else next();
@@ -163,9 +192,11 @@ router.post('/', function (req, res, next){
 			coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
 			type: 'Point'
 		},
-		maxDistance: 30,
+		maxDistance: 40,
 		spherical: true
 	}).exec(function (err, result){
+
+		if(re)
 		if(err) res.send(err);	
 		if(result.length >= 1){
 			//check value in array are not duplicate
@@ -270,7 +301,7 @@ router.post('/', function (req, res, next){
 				status: 'OUT',
 				msg: "Passenger out and delete value parameter line and destination."
 			});
-			next();
+			next(); 
 		}else{
 		// in case of not yet destination
 			next();	

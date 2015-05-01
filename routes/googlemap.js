@@ -18,6 +18,17 @@ var _ = require('underscore');
 // 	callback(busLine);
 // }
 
+router.get('/geocode/:destination', function(req, res){
+	gm.geocode(req.params.destination, function (err, dest){
+		res.send(dest);
+		if(dest){
+			var destination = dest.results[0].geometry.location.lat+','+dest.results[0].geometry.location.lng;
+			res.send(destination);
+		}else {
+			res.send(err);
+		}		
+	}, null, null, 'th', 'th');
+});
 
 router.get('/reversegeo', function(req, res){
 	gm.reverseGeocode(req.param('latlng'), function(err, data){
