@@ -307,9 +307,10 @@ router.post('/', function (req, res, next){
 		if(_.indexOf(req.body.tag, req.body.destination) != -1){
 			res.jsonp({
 				status: 'OUT',
-				msg: "Passenger out and delete value of parameter line and delete parameter destination."
+				msg: "Passenger out and delete value of parameter line and delete parameter destination.",
+				tag: req.body.tag
 			});
-			next(); 
+			 next(); 
 		}else{
 		// in case of not yet destination
 			next();	
