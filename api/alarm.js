@@ -16,7 +16,7 @@ router.get('/bus-stop/:line', function (req, res){
 			}
 			callback();
 		}, function (err){			
-			res.json({
+			res.jsonp({
 				result: busStopName.length,
 				busStop: busStopName
 			});	
@@ -40,7 +40,7 @@ router.get('/:preDestination/:busStopName/:line', function (req, res){
 					if(index - req.params.preDestination >= 0){
 						busStopName = busStopNames[index - req.params.preDestination];	
 					}else {
-						res.json({
+						res.jsonp({
 							status: "err",
 							msg: "please select real predestination bus stop"
 						});
@@ -52,7 +52,7 @@ router.get('/:preDestination/:busStopName/:line', function (req, res){
 		function (busStopName, callback){
 			BusStop.find({ name: busStopName })
 			.exec(function (err, busStop){
-				if(err) res.send(err);
+				if(err) res.jsonp(err);
 
 				if(busStop){
 					var tag = busStop[0]._id;

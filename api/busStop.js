@@ -136,7 +136,7 @@ router.get('/near/destination/:origin/:destination', function (req, res){
 					maxDistance: 30,
 					spherical: true
 				}).exec(function (err, result){
-					if(err) res.send(err);
+					if(err) res.jsonp(err);
 					if(result.length >= 1){
 						destBusStopGeo.name = result[0].name;
 						destBusStopGeo.tag = result[0]._id;
@@ -171,7 +171,7 @@ router.get('/findnear/:origin/:distance/:line', function (req, res){
 		maxDistance: parseInt(req.params.distance),
 		spherical: true
 	}).exec(function (err, busStop){
-		if(err) res.send(err);	
+		if(err) res.jsonp(err);	
 		res.jsonp({
 			result: busStop.length,
 			line: line,
@@ -251,6 +251,7 @@ router.get('/linetogo/:destination', function (req, res){
 });
 
 // find fill bus stop and estimate
+// need inbound or outbound condition 
 router.get('/findfill/:origin/:line/:distance', function (req, res){
 	var origin = req.params.origin.split(',');
 	async.waterfall([
@@ -263,7 +264,7 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 				maxDistance: parseInt(req.params.distance),
 				spherical: true
 			}).exec(function (err, busStop){
-				if(err) res.send(err);
+				if(err) res.jsonp(err);
 
 				callback(null, busStop);
 			});			
@@ -271,7 +272,7 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 		function (busStop, callback){
 			var _dest = "", temp = "", tag = [];
 			async.each(busStop, function (entry, callback){
-				//make coordinates to string and split it into arrat of string
+				//make coordinates to string and split it into array of string
 				temp = String(entry.loc.coordinates).split(',');
 				// make bus stop string and set last bus stop with no '|'
 				if(entry != busStop[busStop.length - 1]){
@@ -295,36 +296,38 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 			BusGeo.find().and([{ line: req.params.line }, { tag : { $nin : tags }}])
 			.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
 			.exec(function (err, first){
-				if(err) res.send(err);
+				if(err) res.jsonp(err);
 				// res.send(first);
-				var currentBus = first[0].loc.coordinates[1]+','+first[0].loc.coordinates[0];
-				console.log("currentBus = "+currentBus+" busStop = "+busStop);
+				if(first.length >= 1){
+					var currentBus = first[0].loc.coordinates[1]+','+first[0].loc.coordinates[0];
+					console.log("currentBus = "+currentBus+" busStop = "+busStop);
 
-				busStop.split('|').forEach(function (entry){
-					busStopJson.push(JSON.parse('{ "lat": '+entry.split(',')[0]+', "lng": '+entry.split(',')[1]+'}'));
-				});
-				// res.send(result);	
-				gm.distance(
-				currentBus, //origin
-				busStop,  //destination
-				function (err, estimate){
-				  if(err) res.send("x = "+err);
-				  // res.send(estimate); 
-				  if(estimate.status == "OK"){
-				  	var _estimate = {
-					  	status: estimate.status,
-					  	line: parseInt(req.params.line),
-					  	origin: currentBus,
-					  	busstop: busStopJson,					  	
-					  	estimate: estimate.rows[0].elements
-				  	};
-					callback(null, _estimate);
-				  }else res.jsonp(estimate);				  
-				}, false, "transit");
+					busStop.split('|').forEach(function (entry){
+						busStopJson.push(JSON.parse('{ "lat": '+entry.split(',')[0]+', "lng": '+entry.split(',')[1]+'}'));
+					});
+					// res.send(result);	
+					gm.distance(
+					currentBus, //origin
+					busStop,  //destination
+					function (err, estimate){
+					  if(err) res.jsonp("x = "+err);
+					  // res.send(estimate); 
+					  if(estimate.status == "OK"){
+					  	var _estimate = {
+						  	status: estimate.status,
+						  	line: parseInt(req.params.line),
+						  	origin: currentBus,
+						  	busstop: busStopJson,					  	
+						  	estimate: estimate.rows[0].elements
+					  	};
+						callback(null, _estimate);
+					  }else res.jsonp(estimate);				  
+					}, false, "transit");
+				}				
 			});
 		}
 	], 	function (err, results){
-		if (err) res.send(err);
+		if (err) res.jsonp(err);
 		
 		res.jsonp(results);
 	});
@@ -343,8 +346,8 @@ router.get('/nearest/:position', function (req, res){
 		maxDistance: 100,
 		spherical: true
 	}).exec(function (err, result){
-		if(err) res.send(err);		
-		res.send(result);	
+		if(err) res.jsonp(err);		
+		res.jsonp(result);	
 		// async.each(result, function (entry, callback){
 		// 	if(entry.line){
 		// 		async.each(entry.line, function (index, callback){

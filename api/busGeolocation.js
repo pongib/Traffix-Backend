@@ -29,9 +29,9 @@ router.use('/all', function(req, res, next) {
 
 router.get('/all', function (req, res) {
 	BusGeo.find(function (err, result){
-		if(err) res.send(err);
+		if(err) res.jsonp(err);
 
-		res.send({
+		res.jsonp({
 			result: result.length,
 			data: result
 		});
@@ -53,12 +53,14 @@ router.get('/all', function (req, res) {
 
 router.post('/', function (req, res, next){
 	// check "", null, undefind, false, 0, NaN
-	if(!req.body.userId)
-		res.json({
+	if(!req.body.userId){
+		res.jsonp({
 			status: "Error",
 			msg: "User id not found!"
 		});
-	else next();
+	}else {
+		next();
+	}
 });
 
 // find near bus for return bus line to user 
@@ -98,7 +100,7 @@ router.post('/', function (req, res, next){
 
 router.post('/', function (req, res, next){
 	var line = [], speed = parseInt(req.body.speed);
-	if(!req.body.line){
+	if(!req.body.line && speed >= 5){
 		BusGeo.find()
 		.where('speed').gte(speed - 2).lte(speed + 2)
 		.where('loc').near({
@@ -109,7 +111,7 @@ router.post('/', function (req, res, next){
 			maxDistance: 1,
 			spherical: true
 		}).exec(function (err, result){
-			if(err) res.send(err);
+			if(err) res.jsonp(err);
 			if(result.length >= 1){
 				async.each(result, function (entry, callback){
 					if(entry.line){
@@ -117,7 +119,7 @@ router.post('/', function (req, res, next){
 					}
 					callback();
 				}, function (err){
-					res.json({
+					res.jsonp({
 					  status: "Line",
 					  line: _.uniq(line)
 					});
@@ -132,7 +134,7 @@ router.post('/', function (req, res, next){
 					maxDistance: 100,
 					spherical: true
 				}).exec(function (err, result){
-					if(err) res.send(err);
+					if(err) res.jsonp(err);
 					if(result.length >= 1){
 						async.each(result, function (entry, callback){
 							if(entry.line){
@@ -144,13 +146,13 @@ router.post('/', function (req, res, next){
 								});
 							}							
 						}, function (err){
-							res.json({
+							res.jsonp({
 							  status: "Line",
 							  line: _.uniq(line)
 							});
 						});
 					}else {
-						res.send({
+						res.jsonp({
 				 			status: "No Line"
 						});
 					}
@@ -167,7 +169,7 @@ router.post('/', function (req, res, next){
 	// 		"line": "75",
 	// 		"accuracy": 5,
 	// 		"speed": 40,
-	//   		"lng": 100.4967136, 
+	//   		"lng": 100.4967136, -
 	//   		"lat": 13.6540672,	
 	// 		"date": 1426567532014,
 	// 		"tag": ["54fff522ea4818acc35289ef"]
@@ -186,34 +188,40 @@ router.post('/', function (req, res, next){
 
 
 router.post('/', function (req, res, next){	
-	var tags = [];
-	BusStop.where('loc').near({
-		center: {
-			coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
-			type: 'Point'
-		},
-		maxDistance: 40,
-		spherical: true
-	}).exec(function (err, result){
-
-		if(re)
-		if(err) res.send(err);	
-		if(result.length >= 1){
-			//check value in array are not duplicate
-			//result 0 because mongo return nearest first
-			if(_.indexOf(req.body.tag, String(result[0]._id)) == -1){
-				req.body.tag.push(String(result[0]._id));
+	// if line is set imply that user on the bus
+	// we add tag only user on the bus not WALKING
+	if(req.body.line){
+		var tags = [];
+		BusStop.where('loc').near({
+			center: {
+				coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
+				type: 'Point'
+			},
+			maxDistance: 40,
+			spherical: true
+		}).exec(function (err, result){
+			if(err) res.jsonp(err);	
+			if(result.length >= 1){
+				//check value in array are not duplicate
+				//result 0 because mongo return nearest first
+				if(_.indexOf(req.body.tag, String(result[0]._id)) == -1){
+					req.body.tag.push(String(result[0]._id));
+					next();
+				}else {
+					//in case already have value in tag array
+					next(); 
+				}					
+			}else{ 
+			// can't find bus stop at this moment
+			// so, no tag added
 				next();
-			}else {
-				//in case already have value in tag array
-				next(); 
-			}					
-		}else{ 
-		// can't find bus stop at this moment
-		// so, no tag added
-			next();
-		}
-	});
+			}
+		});
+	}else {
+		//if line not set imply that user not on the bus
+		next();
+	}
+	
 });
 
 // alarm checking
@@ -240,7 +248,7 @@ router.post('/', function (req, res, next){
 	//   	"lat": 13.6540672,	
 	// 		"date": 1426567532014,
 	// 		"tag": ["54fff522ea4818acc35289ef"],
-    //      "alarm":  "54fff556ea4818acc35289fa"
+ //         "alarm":  "54fff556ea4818acc35289fa"
 	// }    
 
 router.post('/', function (req, res, next){
@@ -299,7 +307,7 @@ router.post('/', function (req, res, next){
 		if(_.indexOf(req.body.tag, req.body.destination) != -1){
 			res.jsonp({
 				status: 'OUT',
-				msg: "Passenger out and delete value parameter line and destination."
+				msg: "Passenger out and delete value of parameter line and delete parameter destination."
 			});
 			next(); 
 		}else{
@@ -329,10 +337,10 @@ router.post('/', function (req, res){
 	});
 
 	busGeo.save(function (err){
-		if(err) res.send(err);
+		if(err) res.jsonp(err);
 		// return tag for use in next request time
 		console.log("save to collection completed");
-		res.send({
+		res.jsonp({
 			msg: 'save to collection complete',
 			data: busGeo,
 			tag: busGeo.tag
@@ -342,7 +350,7 @@ router.post('/', function (req, res){
 
 router.delete('/:id', function (req, res){
 	BusGeo.findByIdAndRemove(req.params.id, function (err){
-		if(err) res.send(err);
+		if(err) res.jsonp(err);
 
 		res.json({
 			msg: 'Delete complete with id '+req.params.id
