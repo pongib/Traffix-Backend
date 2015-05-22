@@ -249,7 +249,7 @@ router.get('/near/2/:busStop/:firstLine/:secondLine/:tag', function (req, res){
 	    	}else {
 				res.jsonp({
 					status: 'ERROR',
-					msg: 'Bus search not found',,
+					msg: 'Bus search not found',
 					origin: -1,
 				  	busstop: req.params.busStop,
 				  	line1: {
