@@ -22,7 +22,14 @@ router.get('/near/1/:busStop/:firstLine/:tag', function (req, res){
 		if(err) {
 			res.jsonp({
 				status: 'ERROR',
-				msg: 'Not found bus geo and '+err
+				msg: 'Not found bus geo and '+err,
+				origin: -1,
+			  	busstop: req.params.busStop,
+			  	line1: {
+			  		line: parseInt(req.params.firstLine),
+			  		distance: -1,
+			  		duration: -1
+			  	}
 			});
 		}	
 		if(first.length){
@@ -38,7 +45,14 @@ router.get('/near/1/:busStop/:firstLine/:tag', function (req, res){
 			  if(err) {
 		  		res.jsonp({
 					status: 'ERROR',
-					msg: 'Can not estimate and '+err
+					msg: 'Can not estimate and '+err,
+					origin: currentBus,
+					busstop: req.params.busStop,
+				  	line1: {
+				  		line: parseInt(req.params.firstLine),
+				  		distance: -1,
+				  		duration: -1
+				  	}
 				});
 			  }
 			  if(estimate){
@@ -68,14 +82,28 @@ router.get('/near/1/:busStop/:firstLine/:tag', function (req, res){
 			  }else {
 			  	res.jsonp({
 					status: 'ERROR',
-					msg: 'Can not estimate bus stop'
+					msg: 'Can not estimate bus stop',
+					origin: currentBus,
+					busstop: req.params.busStop,
+				  	line1: {
+				  		line: parseInt(req.params.firstLine),
+				  		distance: -1,
+				  		duration: -1
+				  	}
 				});
 			  }
 			}, false, "transit");
 		}else {
 			res.jsonp({
 				status: 'ERROR',
-				msg: 'Bus search not found'
+				msg: 'Bus search not found',
+				origin: -1,
+				busstop: req.params.busStop,
+			  	line1: {
+			  		line: parseInt(req.params.firstLine),
+			  		distance: -1,
+			  		duration: -1
+			  	}
 			});
 		}		
 	});
@@ -92,7 +120,19 @@ router.get('/near/2/:busStop/:firstLine/:secondLine/:tag', function (req, res){
 	    	if(err) {
 	    		res.jsonp({
 					status: 'ERROR',
-					msg: 'Not found bus geo and '+err
+					msg: 'Not found bus geo and '+err,
+					origin: -1,
+				  	busstop: req.params.busStop,
+				  	line1: {
+				  		line: parseInt(req.params.firstLine),
+				  		distance: -1,
+				  		duration: -1
+				  	},
+				  	line2: {
+				  		line: parseInt(req.params.secondLine),
+				  		distance: -1,
+				  		duration: -1
+				  	}
 				});
 	    	}
 	    	if(first.length > 0){
@@ -104,7 +144,19 @@ router.get('/near/2/:busStop/:firstLine/:secondLine/:tag', function (req, res){
 		    		if(err) {
 				  		res.jsonp({
 							status: 'ERROR',
-							msg: 'Not found bus geo and '+err
+							msg: 'Not found bus geo and '+err,
+							origin: -1,
+						  	busstop: req.params.busStop,
+						  	line1: {
+						  		line: parseInt(req.params.firstLine),
+						  		distance: -1,
+						  		duration: -1
+						  	},
+						  	line2: {
+						  		line: parseInt(req.params.secondLine),
+						  		distance: -1,
+						  		duration: -1
+						  	}
 						});
 					}
 					if(second){
@@ -120,7 +172,19 @@ router.get('/near/2/:busStop/:firstLine/:secondLine/:tag', function (req, res){
 							if(err) {
 								res.jsonp({
 									status: 'ERROR',
-									msg: 'Can not estimate and '+err
+									msg: 'Can not estimate and '+err,
+									origin: currentBus,
+								  	busstop: req.params.busStop,
+								  	line1: {
+								  		line: parseInt(req.params.firstLine),
+								  		distance: -1,
+								  		duration: -1
+								  	},
+								  	line2: {
+								  		line: parseInt(req.params.secondLine),
+								  		distance: -1,
+								  		duration: -1
+								  	}
 								});
 							} 
 							if(estimate){
@@ -164,7 +228,19 @@ router.get('/near/2/:busStop/:firstLine/:secondLine/:tag', function (req, res){
 							}else {
 							  	res.jsonp({
 									status: 'ERROR',
-									msg: 'Can not estimate bus stop'
+									msg: 'Can not estimate bus stop',
+									origin: currentBus,
+								  	busstop: req.params.busStop,
+								  	line1: {
+								  		line: parseInt(req.params.firstLine),
+								  		distance: -1,
+								  		duration: -1
+								  	},
+								  	line2: {
+								  		line: parseInt(req.params.secondLine),
+								  		distance: -1,
+								  		duration: -1
+								  	}
 								});
 							}						   
 						}, false, "transit");
@@ -173,7 +249,19 @@ router.get('/near/2/:busStop/:firstLine/:secondLine/:tag', function (req, res){
 	    	}else {
 				res.jsonp({
 					status: 'ERROR',
-					msg: 'Bus search not found'
+					msg: 'Bus search not found',,
+					origin: -1,
+				  	busstop: req.params.busStop,
+				  	line1: {
+				  		line: parseInt(req.params.firstLine),
+				  		distance: -1,
+				  		duration: -1
+				  	},
+				  	line2: {
+				  		line: parseInt(req.params.secondLine),
+				  		distance: -1,
+				  		duration: -1
+				  	}
 				});
 			}			    		  
 	    }); 
