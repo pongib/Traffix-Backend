@@ -73,13 +73,13 @@ router.get('/:busline', function (req, res){
 			});
 		}else {
 			res.jsonp({
-				status: 'NO RESULT',
+				status: 'ERROR',
 				msg: 'Not found bus stop'
 			});
 		}			
 	});
 });
-
+// added bug barrier ready to test
 router.get('/near/destination/:origin/:destination', function (req, res){	
 	async.waterfall([
 		function (callback){
@@ -99,26 +99,34 @@ router.get('/near/destination/:origin/:destination', function (req, res){
 			var departureNow = Math.floor((new Date()).getTime()/1000);
 			var destBusStopGeo = [], busLine = [];
 			gm.directions(req.params.origin, geolocation, function (err, data){
-				// res.send(data.routes);				
-				async.each(data.routes, function (entries, callback){
-					var endDest = {};
-					entries.legs[0].steps.some(function(entry){
-						if(entry.travel_mode == 'TRANSIT'){
-							endDest.line = entry.transit_details.line.short_name;
-							endDest.geolocation = entry.end_location;
-							destBusStopGeo.push(endDest);
-							busLine.push(endDest.line);
-							return true; //want to break use some return true use every return false
-						}else return false;
+				// res.send(data.routes);
+				if(err){
+					res.jsonp({
+						status: 'ERROR',
+						msg: 'cannot find directions please specific another direction and '+ err
 					});
-					callback();
-				}, function (err){
-					line = _.sortBy(_.uniq(busLine, false), function (num){
-						return num;
-					}).map(Number);
-					// res.send(destBusStopGeo);
-					callback(null, destBusStopGeo, line);
-				});
+				}				
+				if(data){					
+					async.each(data.routes, function (entries, callback){
+						var endDest = {};
+						entries.legs[0].steps.some(function(entry){
+							if(entry.travel_mode == 'TRANSIT'){
+								endDest.line = entry.transit_details.line.short_name;
+								endDest.geolocation = entry.end_location;
+								destBusStopGeo.push(endDest);
+								busLine.push(endDest.line);
+								return true; //want to break use some return true use every return false
+							}else return false;
+						});
+						callback();
+					}, function (err){
+						line = _.sortBy(_.uniq(busLine, false), function (num){
+							return num;
+						}).map(Number);
+						// res.send(destBusStopGeo);
+						callback(null, destBusStopGeo, line);
+					});
+				}
 			}, 'false', 'transit', null, true, null, null, null, departureNow, null, 'th')
 		},
 		function (destBusStopGeo, line, callback){
@@ -136,13 +144,19 @@ router.get('/near/destination/:origin/:destination', function (req, res){
 					maxDistance: 30,
 					spherical: true
 				}).exec(function (err, result){
-					if(err) res.jsonp(err);
+					if(err) {
+						res.jsonp({
+							status: 'ERROR',
+							msg: 'cannot find bus stop at connecting point abd '+ err
+						});
+					}
 					if(result.length >= 1){
 						destBusStopGeo.name = result[0].name;
 						destBusStopGeo.tag = result[0]._id;
 						busArr.push(destBusStopGeo);
 					}else {
-						destBusStopGeo.name = "no bus stop result"
+						destBusStopGeo.name = "no bus stop result";
+						destBusStopGeo.tag = "no tag result"; 
 						busArr.push(destBusStopGeo);
 					}
 					callback();				
@@ -171,12 +185,19 @@ router.get('/findnear/:origin/:distance/:line', function (req, res){
 		maxDistance: parseInt(req.params.distance),
 		spherical: true
 	}).exec(function (err, busStop){
-		if(err) res.jsonp(err);	
-		res.jsonp({
-			result: busStop.length,
-			line: line,
-			data: busStop 
-		});
+		if(err) {
+			res.jsonp({
+				status: 'ERROR',
+				msg: 'cannot find bus stop result and ' + err
+			});
+		}
+		if(busStop){
+			res.jsonp({
+				result: busStop.length,
+				line: line,
+				data: busStop 
+			});		
+		}
 	});								
 });
 //find near bus stop
@@ -245,8 +266,15 @@ router.get('/findnear/:origin/:distance/:line', function (req, res){
 
 router.get('/linetogo/:destination', function (req, res){
 	gm.geocode(req.params.destination, function (err, data){
-		if(err) res.send(err);
-		res.send(data.results[0].geometry.location);
+		if(err) {						
+			res.jsonp({
+				status: 'ERROR',
+				msg: 'cannot find bus stop result and ' + err
+			});
+		} 
+		if(data){
+			res.jsonp(data.results[0].geometry.location);
+		}		
 	});
 });
 
@@ -264,9 +292,20 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 				maxDistance: parseInt(req.params.distance),
 				spherical: true
 			}).exec(function (err, busStop){
-				if(err) res.jsonp(err);
-
-				callback(null, busStop);
+				if(err){
+					res.jsonp({
+						status: 'ERROR',
+						msg: 'cannot find bus stop result and ' + err
+					});
+				}
+				if(busStop.length >= 1){
+					callback(null, busStop);
+				}else {
+					res.jsonp({
+						status: 'ERROR',
+						msg: 'cannot find bus stop result'
+					});
+				}
 			});			
 		},
 		function (busStop, callback){
@@ -296,8 +335,12 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 			BusGeo.find().and([{ line: req.params.line }, { tag : { $nin : tags }}])
 			.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
 			.exec(function (err, first){
-				if(err) res.jsonp(err);
-				// res.send(first);
+				if(err) {
+					res.jsonp({
+						status: 'ERROR',
+						msg: 'cannot find bus geo result and ' + err
+					});
+				}
 				if(first.length >= 1){
 					var currentBus = first[0].loc.coordinates[1]+','+first[0].loc.coordinates[0];
 					console.log("currentBus = "+currentBus+" busStop = "+busStop);
@@ -310,18 +353,30 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 					currentBus, //origin
 					busStop,  //destination
 					function (err, estimate){
-					  if(err) res.jsonp("x = "+err);
+					  if(err) {
+					  	res.jsonp({
+							status: 'ERROR',
+							msg: 'cannot find bus stop result and ' + err
+						});				
+					  }
 					  // res.send(estimate); 
-					  if(estimate.status == "OK"){
-					  	var _estimate = {
-						  	status: estimate.status,
-						  	line: parseInt(req.params.line),
-						  	origin: currentBus,
-						  	busstop: busStopJson,					  	
-						  	estimate: estimate.rows[0].elements
-					  	};
-						callback(null, _estimate);
-					  }else res.jsonp(estimate);				  
+					  if(estimate){
+					  	if(estimate.status == "OK"){
+						  	var _estimate = {
+							  	status: estimate.status,
+							  	line: parseInt(req.params.line),
+							  	origin: currentBus,
+							  	busstop: busStopJson,					  	
+							  	estimate: estimate.rows[0].elements
+						  	};
+							callback(null, _estimate);
+						 }else res.jsonp(estimate);		
+					  }else {
+					  	res.jsonp({
+							status: 'ERROR',
+							msg: 'cannot estimate the time'
+						});		
+					  }
 					}, false, "transit");
 				}				
 			});
@@ -346,8 +401,21 @@ router.get('/nearest/:position', function (req, res){
 		maxDistance: 100,
 		spherical: true
 	}).exec(function (err, result){
-		if(err) res.jsonp(err);		
-		res.jsonp(result);	
+		if(err) {
+			res.jsonp({
+				status: 'ERROR',
+				msg: 'cannot find bus stop result and ' + err
+			});		
+		}	
+		if(result){
+			res.jsonp(result);	
+		}else {
+			res.jsonp({
+				status: 'ERROR',
+				msg: 'cannot find bus stop result'
+			});		
+		}
+		
 		// async.each(result, function (entry, callback){
 		// 	if(entry.line){
 		// 		async.each(entry.line, function (index, callback){

@@ -111,6 +111,34 @@ router.get('/radar/:geo/:radius', function (req, res){
 	});
 });
 
+router.get('/nearby/:geo/:radius', function (req, res){
+	var options = {
+		location: req.params.geo,
+		radius: req.params.radius,
+		types: 'bus_station',
+		language: 'th'
+	};
+	gm.nearby(options, function (err, data){
+		res.send(data);
+	});
+});
+
+router.get('/geocode/:name', function (req, res){
+	gm.geocode(req.params.name, function (err, data){
+		if(err) {
+			res.send({msg: 'err is '+ err});
+		}
+		if(data){
+			if(data.status != "ZERO_RESULTS"){
+				var geo = data.results[0].geometry.location;
+				res.send(geo);
+			}else {
+				res.send({msg: 'not found'});
+			}
+		}
+	}, false, null, 'th', 'th');
+});
+
 router.get('/details/:id/:language', function (req, res){
 	gm.placeDetails(req.params.id, req.params.language, function (err, details){
 		if(err) res.send(err);
@@ -119,10 +147,12 @@ router.get('/details/:id/:language', function (req, res){
 	})
 });
 
-router.get('/search/:query/:types', function (req, res){
+router.get('/search/:query/:types/:radius', function (req, res){
 	var options = {
 		query: req.params.query,
-		types: req.params.types
+		radius: req.params.radius,
+		types: req.params.types,
+		language: 'th'
 	};
 	gm.placeName(options, function (err, details){
 		if(err) res.send(err);

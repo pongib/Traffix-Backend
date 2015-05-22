@@ -9,7 +9,7 @@ var async = require('async');
 var router = express.Router();
 var BusStop = require('../traffix_model/busStop.js');
 var BusGeo = require('../traffix_model/busGeolocation');
-
+var f = require('./function');
 
 router.get('/encrypt', function (req, res){
 	req.connection.setTimeout(600000);
@@ -108,7 +108,7 @@ router.get('/encrypt', function (req, res){
 					newBusInfo.push(tempBusInfo);
 					callback();
 				}, function (err){
-					fs.writeFile('./dataJson/busStopData.json', JSON.stringify(newBusInfo, null, 4), function(err){
+					fs.writeFile('./dataJson/raw/busStopData.json', JSON.stringify(newBusInfo, null, 4), function(err){
 						console.log("write success");
 						callback(null, newBusInfo);
 					});	
@@ -180,7 +180,7 @@ router.get('/detail', function (req, res){
 
 
 router.get('/handle', function (req, res){
-	fs.readFile('./dataJson/siamtraffic.json', function (err, data){
+	fs.readFile('./dataJson/raw/siamtraffic.json', function (err, data){
 		var busInfo = JSON.parse(data);
 		var newArray = [];
 		async.eachSeries(busInfo.forward, function (elem, callback){
@@ -199,5 +199,148 @@ router.get('/handle', function (req, res){
 	});
 });
 
+// get bus stop name all put in array and write it to file
+router.get('/busstopname/all', function (req, res){
+	fs.readFile('./dataJson/raw/busStopData.json', function (err, data){
+		var busInfo = JSON.parse(data);
+		var busStopNameForward = [], busStopNameBackward = [];
+		async.each(busInfo, function (elem, callback){
+			async.parallel([
+				function (callback){
+					async.each(elem.busForward, function (forward, callback){
+						busStopNameForward.push(forward);
+						callback();
+					}, function (err){
+						callback(null, busStopNameForward);
+					});
+				}, 
+				function (callback){
+					async.each(elem.busBackward, function (backward, callback){
+						busStopNameBackward.push(backward);
+						callback();
+					}, function (err){
+						callback(null, busStopNameBackward);
+					});
+				}
+			], function (err, result){
+				callback();
+			});
+		}, function(err){
+			var uf = _.uniq(busStopNameForward), ub =  _.uniq(busStopNameBackward);
+			var inter = _.intersection(uf, ub);
+			var union = _.union(uf, ub);
+			fs.writeFile('./dataJson/raw/busStopNameAll.json', JSON.stringify(union, null, 4), function(err){
+				console.log("write success");
+				res.send({
+					f: busStopNameForward.length,
+					b: busStopNameBackward.length,
+					uf: uf.length,
+					ub: ub.length,
+					inter: inter.length,
+					union: union.length
+				});
+			});			
+		});
+	});
+});
+
+router.get('/busstopname/line', function (req, res){
+	async.waterfall([
+		function (callback){
+			fs.readFile('./dataJson/raw/busStopNameAll.json', function (err, data){
+				var busNameAll = JSON.parse(data);
+				fs.readFile('./dataJson/busStopData.json', function (err, data){
+					var busInfo = JSON.parse(data);
+					callback(null, busNameAll, busInfo);
+				});
+			});
+		},
+		function (busNameAll, busInfo, callback){		
+			var busInfoArr = [];
+			async.each(busNameAll, function (name, callback){
+				var busNameAndLine = {
+					name: name
+				}; 
+				busNameAndLine.line = [];
+				async.each(busInfo, function (item, callback) {
+					if(item.busForward.indexOf(name) != -1 || item.busBackward.indexOf(name) != -1){
+						busNameAndLine.line.push(item.line);
+					}	
+					callback();				
+				}, function (err){
+					busInfoArr.push(busNameAndLine);
+					callback();
+				});					
+			}, function (err){
+				callback(null, busInfoArr);
+			});
+		},
+		function (busInfo, callback){
+			fs.writeFile('./dataJson/raw/busStopNameWithLine.json', JSON.stringify(busInfo, null, 4), function(err){
+				console.log('write file complete');
+				callback(null, busInfo);
+			});
+		}
+	], function (err, result){
+		res.json({
+			result: result.length
+		});
+	});
+});
+
+
+router.get('/busstopname/line/geocode', function (req, res){
+
+	async.waterfall([
+		function (callback){
+			fs.readFile('./dataJson/raw/busStopNameWithLineAndGeo.json', function (err, data){
+				var busInfoGeo = JSON.parse(data);
+				// callback(null, busInfoGeo);
+			});
+		},
+		function (busInfoGeo, callback){
+			fs.readFile('./dataJson/raw/busStopNameWithLine.json', function (err, data){
+
+			    var busInfo = JSON.parse(data);	
+				var temp = _.findWhere(busInfo, { name: "โรงเรียนบดินทรเดชา" });						
+				var newBusInfo = busInfo.slice(busInfo.indexOf(temp) + 1);
+				callback(null, busInfoGeo, newBusInfo);
+			});
+		},
+		function (busInfoGeo, busInfo, callback){
+			// var busArr = [];
+			async.eachSeries(busInfo, function (item, callback) {
+				var busInfoObj = {
+					name: item.name,
+					line: item.line
+				}
+				gm.geocode(item.name, function (err, data){
+					if(err) {
+						console.log({msg: 'err is '+ err});
+						callback(err);
+					}
+					if(data){
+						if(data.status != "ZERO_RESULTS"){
+							busInfoObj.location = data.results[0].geometry.location;
+						}else {
+							busInfoObj.location = {"lat": null, "lng": null};
+						}
+						busInfoGeo.push(busInfoObj);
+						callback();
+					}					
+				}, false, null, 'th', 'th');  
+			}, function (err){				
+				fs.writeFile('./dataJson/raw/busStopNameWithLineAndGeo.json', JSON.stringify(busInfoGeo, null, 4), function(err){
+					console.log('write file complete');					
+					callback(null, busInfoGeo);
+				});
+			});
+		}
+	], function (err, result){
+		res.send({ result: result.length });
+	});
+});
+
+router.get('/busstopname/line/geocode/clean', f.clean);
 
 module.exports = router;
