@@ -3,14 +3,68 @@ var _ 		= 	require('underscore');
 var fs 		= 	require('fs');
 var async 	= 	require('async');
 var request =   require('request'); 
-var BusTest = require('../traffix_model/busTest');
+var BusTest = 	require('../traffix_model/busTest');
+var BusStop =  	require('../traffix_model/busStop');
 
 exports.print = function (req, res){
 	console.log("x");
 	res.send("x");
 };
 
-exports.saveBusInfoToMongo = function (req, res){
+
+exports.saveBusInfoToMongoReal = function (req, res){
+	async.waterfall([
+	  function (callback){
+	    fs.readFile('./dataJson/clean/busStopNameWithLineAndGeoPlusGeoBustop.json', function (err, data){
+	    	var busInfo = JSON.parse(data);
+	    	// res.send(busInfo.length);
+	    	callback(null, busInfo);
+	    });
+	  },
+	  function (busInfo, callback){
+	  	var url = "http://localhost:9000/api/bus-stop/test/save";
+	  	async.each(busInfo, function(item, callback) {		  		
+	  		// console.log("count "+busInfo.indexOf(item) + 1 + '\n');  		
+			// request.post({ url: url, form: item }, function (err, res, data){
+			// 	if(err){
+			// 		callback(err);
+			// 	}
+
+			// 	if(!err && res.statusCode == 200){					
+			// 		// console.log(data + '\n');
+			// 		callback();
+			// 	}
+
+			// });	   
+
+			var busStop = new BusStop({
+			  name: item.name,
+			  //place array directly on line [Number] and it work like magic.
+			  line: item.line,
+			  loc: {
+				type: "Point",
+				coordinates: [item.bus_station_location.lng, item.bus_station_location.lat]
+			  }
+			});
+
+			busStop.save(function (err){
+				if (err) callback(err);
+				console.log('save complete');		
+				callback();					
+			});   
+	  	}, function (err){
+	  		if(err){
+	  			res.send(err);
+	  		}
+	  		callback(null, 'write to data base complete');
+	  	});
+	  }
+	],function (err, result){
+	 	res.send({status : result});
+	});
+}
+
+exports.saveBusInfoToMongoTest = function (req, res){
 	async.waterfall([
 	  function (callback){
 	    fs.readFile('./dataJson/clean/busStopNameWithLineAndGeoPlusGeoBustop.json', function (err, data){
@@ -61,6 +115,8 @@ exports.saveBusInfoToMongo = function (req, res){
 	 	res.send({status : result});
 	});
 }
+
+
 
 exports.cleanPlus = function (req, res){
 	fs.readFile('./dataJson/raw/busStopNameWithLineAndGeoPlusGeoBustop.json', function (err, data){

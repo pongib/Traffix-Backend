@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
  
 var busStopSchema = mongoose.Schema({
 	name: String,
-	line: [Number],
+	line: [String],
 	loc: {
 		type: { type: String },
 		coordinates: [Number]

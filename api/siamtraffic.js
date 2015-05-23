@@ -344,6 +344,7 @@ router.get('/busstopname/line/geocode', function (req, res){
 router.get('/busstopname/line/geocode/clean', f.clean);
 router.get('/busstopname/line/geocode/plusgeo', f.nearby);
 router.get('/busstopname/line/geocode/plusgeo/clean', f.cleanPlus);
-router.get('/busstop/save', f.saveBusInfoToMongo);
+router.get('/busstop/save/test', f.saveBusInfoToMongoTest);
+router.get('/busstop/save/real', f.saveBusInfoToMongoReal);
 
 module.exports = router;
