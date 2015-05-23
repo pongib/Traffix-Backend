@@ -114,9 +114,10 @@ router.get('/radar/:geo/:radius', function (req, res){
 router.get('/nearby/:geo/:radius', function (req, res){
 	var options = {
 		location: req.params.geo,
-		radius: req.params.radius,
+		// radius: req.params.radius,
 		types: 'bus_station',
-		language: 'th'
+		language: 'th',
+		rankby: 'distance'
 	};
 	gm.nearby(options, function (err, data){
 		res.send(data);

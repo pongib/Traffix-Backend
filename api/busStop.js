@@ -6,6 +6,7 @@ var async = require('async');
 var router = express.Router();
 var BusStop = require('../traffix_model/busStop.js');
 var BusGeo = require('../traffix_model/busGeolocation');
+var BusTest = require('../traffix_model/busTest');
 
 
 // query all bus stop
@@ -20,7 +21,29 @@ router.get('/all', function (req, res){
 	});
 });
 
+router.post('/test/save', function (req, res){
+	// console.log(req.body);
+	
 
+	var busTest = new BusTest({
+	  name: req.body.name,
+	  //place array directly on line [Number] and it work like magic.
+	  line: req.body.line,
+	  loc: {
+		type: "Point",
+		coordinates: [req.body.bus_station_location.lng, req.body.bus_station_location.lat]
+	  }
+	});
+
+	busTest.save(function (err){
+		if (err) res.send(err);
+
+		res.json({
+			msg: 'save to collection complete'
+			// data: busTest
+		});
+	});
+});
 
 
 router.post('/', function (req, res){
@@ -44,7 +67,7 @@ router.post('/', function (req, res){
 			msg: 'save to collection complete',
 			data: busStop
 		});
-	})
+	});
 });
 
 router.delete('/:id', function (req, res){

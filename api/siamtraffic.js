@@ -1,4 +1,4 @@
-var express = require('express');
+	var express = require('express');
 var mongoose = require('mongoose');
 var gm = require('googlemaps');
 var _ = require('underscore');
@@ -342,5 +342,8 @@ router.get('/busstopname/line/geocode', function (req, res){
 });
 
 router.get('/busstopname/line/geocode/clean', f.clean);
+router.get('/busstopname/line/geocode/plusgeo', f.nearby);
+router.get('/busstopname/line/geocode/plusgeo/clean', f.cleanPlus);
+router.get('/busstop/save', f.saveBusInfoToMongo);
 
 module.exports = router;
