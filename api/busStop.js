@@ -164,7 +164,7 @@ router.get('/near/destination/:origin/:destination', function (req, res){
 						coordinates: [parseFloat(entry.geolocation.lng), parseFloat(entry.geolocation.lat)],
 						type: 'Point'
 					},
-					maxDistance: 30,
+					maxDistance: 500,
 					spherical: true
 				}).exec(function (err, result){
 					if(err) {
@@ -173,19 +173,24 @@ router.get('/near/destination/:origin/:destination', function (req, res){
 							msg: 'cannot find bus stop at connecting point abd '+ err
 						});
 					}
-					if(result.length >= 1){
-						destBusStopGeo.name = result[0].name;
-						destBusStopGeo.tag = result[0]._id;
-						busArr.push(destBusStopGeo);
-					}else {
-						destBusStopGeo.name = "no bus stop result";
-						destBusStopGeo.tag = "no tag result"; 
-						busArr.push(destBusStopGeo);
+					if(result){
+						if(result.length >= 1){
+							destBusStopGeo.name = result[0].name;
+							destBusStopGeo.tag = result[0]._id;
+							busArr.push(destBusStopGeo);
+						}
+						// }else {
+						// 	destBusStopGeo.name = "no bus stop result";
+						// 	destBusStopGeo.tag = "no tag result"; 
+						// 	busArr.push(destBusStopGeo);
+						// }
+						callback();		
 					}
-					callback();				
+				
+							
 				});
 			}, function (err){
-				callback(null, line, busArr);				
+				callback(null, line, _.uniq(busArr, 'name'));				
 			});	
 		}
 	], function(err, line, busArr){
