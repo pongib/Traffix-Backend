@@ -88,18 +88,19 @@ router.get('/:busline', function (req, res){
 	.find({ line: req.params.busline })
 	.exec(function (err, busStop){
 		if(err) res.send(err);
-
-		if(busStop.length != 0){
+		if(busStop){
+			if(busStop.length != 0){
 			res.jsonp({
 				status: 'OK',
 				busstop: busStop
 			});
-		}else {
-			res.jsonp({
-				status: 'ERROR',
-				msg: 'Not found bus stop'
-			});
-		}			
+			}else {
+				res.jsonp({
+					status: 'ERROR',
+					msg: 'Not found bus stop'
+				});
+			}	
+		}
 	});
 });
 // added bug barrier ready to test
@@ -176,7 +177,7 @@ router.get('/near/destination/:origin/:destination', function (req, res){
 					if(result){
 						if(result.length >= 1){
 							destBusStopGeo.name = result[0].name;
-							destBusStopGeo.tag = result[0]._id;
+							destBusStopGeo.tag = result[0].tag;
 							busArr.push(destBusStopGeo);
 						}
 						// }else {
@@ -346,8 +347,8 @@ router.get('/findfill/:origin/:line/:distance', function (req, res){
 					_dest += temp[1]+','+temp[0]+'|';
 				}else _dest += temp[1]+','+temp[0];
 
-				if(entry._id){
-					tag.push(entry._id);
+				if(entry.tag){
+					tag.push(entry.tag);
 				}
 
 					

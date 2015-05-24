@@ -13,6 +13,12 @@ router.use(function	(req, res, next){
 	next();
 }); 
 
+router.get('/find/:line', function (req, res){
+	BusGeo.find({ line: req.params.line })
+	.exec(function (err, result){
+		res.send(result);
+	});
+});
 // router.use('/all', function (req, res, next){
 // 	console.log('Requset UrL:', req.originalUrl);
 // 	next();
@@ -108,56 +114,60 @@ router.post('/', function (req, res, next){
 				coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
 				type: 'Point'
 			},
-			maxDistance: 1,
+			maxDistance: 5,
 			spherical: true
 		}).exec(function (err, result){
 			if(err) res.jsonp(err);
-			if(result.length >= 1){
-				async.each(result, function (entry, callback){
-					if(entry.line){
-						line.push(entry.line);
-					}
-					callback();
-				}, function (err){
-					res.jsonp({
-					  status: "Line",
-					  line: _.uniq(line)
-					});
-				});
-			}else{
-				BusStop.find()
-				.where('loc').near({
-					center: {
-						coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
-						type: 'Point'
-					},
-					maxDistance: 100,
-					spherical: true
-				}).exec(function (err, result){
-					if(err) res.jsonp(err);
-					if(result.length >= 1){
-						async.each(result, function (entry, callback){
-							if(entry.line){
-								async.each(entry.line, function (index, callback){
-									line.push(index);
-									callback();
-								}, function (err){
-									callback();
-								});
-							}							
-						}, function (err){
-							res.jsonp({
-							  status: "Line",
-							  line: _.uniq(line)
-							});
-						});
-					}else {
+			if(result){
+				if(result.length >= 1){
+					async.each(result, function (entry, callback){
+						if(entry.line){
+							line.push(entry.line);
+						}
+						callback();
+					}, function (err){
 						res.jsonp({
-				 			status: "No Line"
+						  status: "Line",
+						  line: _.uniq(line)
 						});
-					}
-				});				
-			}		
+					});
+				}else{
+					BusStop.find()
+					.where('loc').near({
+						center: {
+							coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
+							type: 'Point'
+						},
+						maxDistance: 100,
+						spherical: true
+					}).exec(function (err, result){
+						if(err) res.jsonp(err);
+						if(result){
+							if(result.length >= 1){
+							async.each(result, function (entry, callback){
+								if(entry.line){
+									async.each(entry.line, function (index, callback){
+										line.push(index);
+										callback();
+									}, function (err){
+										callback();
+									});
+								}							
+							}, function (err){
+								res.jsonp({
+								  status: "Line",
+								  line: _.uniq(line)
+								});
+							});
+							}else {
+								res.jsonp({
+						 			status: "No Line"
+								});
+							}
+						}
+					});				
+				}	
+			}			
 		});
 	}else next();
 });
@@ -204,8 +214,8 @@ router.post('/', function (req, res, next){
 			if(result.length >= 1){
 				//check value in array are not duplicate
 				//result 0 because mongo return nearest first
-				if(_.indexOf(req.body.tag, String(result[0]._id)) == -1){
-					req.body.tag.push(String(result[0]._id));
+				if(_.indexOf(req.body.tag, String(result[0].tag)) == -1){
+					req.body.tag.push(String(result[0].tag));
 					next();
 				}else {
 					//in case already have value in tag array

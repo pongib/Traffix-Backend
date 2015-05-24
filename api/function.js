@@ -3,6 +3,7 @@ var _ 		= 	require('underscore');
 var fs 		= 	require('fs');
 var async 	= 	require('async');
 var request =   require('request'); 
+var crypto  =	require('crypto'); 	
 var BusTest = 	require('../traffix_model/busTest');
 var BusStop =  	require('../traffix_model/busStop');
 
@@ -11,18 +12,96 @@ exports.print = function (req, res){
 	res.send("x");
 };
 
+exports.genTag = function (req, res){
+	async.waterfall([
+	    function (callback){
+	      	fs.readFile('./dataJson/clean/busStopNoSpace.json', function (err, data){
+				var busInfo = JSON.parse(data);
+				callback(null, busInfo);
+			});
+	    },	  
+	    function (busInfo, callback){
+	    	var arrBus = [];	    	
+	   		async.eachSeries(busInfo, function (item, callback) {
+	   			var objBus = item;
+	   			crypto.randomBytes(16, function (err, data){
+	    			if(err) throw err;
+		    		if(data){
+		    			objBus.tag = data.toString('hex');
+		    			arrBus.push(objBus);
+		    			callback();
+		    		}
+	    		});
+	   		}, function (err){
+	   			callback(null, arrBus);
+	   		});	   		   
+	    },
+	    function (arrBus, callback){
+	    	fs.writeFile('./dataJson/clean/busStopNoSpaceWithTag.json', JSON.stringify(arrBus, null, 4), function (err){
+				console.log('write complete!');
+				callback(null, arrBus);
+			});
+	    }
+	],function (err, result){
+	 	res.send({ 
+	  		result: result.length,
+	  		data: result
+	  	});
+	});
+};
+
+
+exports.clearLastSpace = function (req, res){
+	async.waterfall([
+		function (callback){
+			fs.readFile('./dataJson/clean/busStopNameWithLineAndGeoPlusGeoBustop.json', function (err, data){
+				var busInfo = JSON.parse(data);
+				callback(null, busInfo);
+			});
+		},
+		function (busInfo, callback){
+			var arrBus = [], num = [];
+			async.eachSeries(busInfo, function (item, callback) {
+				var Obj = item;
+				if(item.name.charAt(item.name.length - 1) == ' '){
+					num.push(item.name);
+					Obj.name = item.name.slice(0 , -1);
+					arrBus.push(Obj);
+				}else {
+					arrBus.push(Obj);
+				}
+				callback();
+			}, function (err){
+				callback(null, arrBus, num);		
+			});
+		}
+	],function (err, arrBus, num){
+		fs.writeFile('./dataJson/clean/busStopNoSpace.json', JSON.stringify(arrBus, null, 4), function (err){
+			console.log('write complete!');
+			res.send({ 
+		  		result: arrBus.length,
+		  		numAmount: num.length,
+		  		num: num,
+		  		data: arrBus
+		  	});
+		});
+
+	  	
+	});
+};
 
 exports.saveBusInfoToMongoReal = function (req, res){
 	async.waterfall([
 	  function (callback){
-	    fs.readFile('./dataJson/clean/busStopNameWithLineAndGeoPlusGeoBustop.json', function (err, data){
+	    fs.readFile('./dataJson/clean/busStopNoSpaceWithTag.json', function (err, data){
 	    	var busInfo = JSON.parse(data);
-	    	// res.send(busInfo.length);
+	    	// res.send(busInfo);
 	    	callback(null, busInfo);
 	    });
 	  },
 	  function (busInfo, callback){
 	  	var url = "http://localhost:9000/api/bus-stop/test/save";
+
 	  	async.each(busInfo, function(item, callback) {		  		
 	  		// console.log("count "+busInfo.indexOf(item) + 1 + '\n');  		
 			// request.post({ url: url, form: item }, function (err, res, data){
@@ -41,6 +120,7 @@ exports.saveBusInfoToMongoReal = function (req, res){
 			  name: item.name,
 			  //place array directly on line [Number] and it work like magic.
 			  line: item.line,
+			  tag: item.tag,
 			  loc: {
 				type: "Point",
 				coordinates: [item.bus_station_location.lng, item.bus_station_location.lat]

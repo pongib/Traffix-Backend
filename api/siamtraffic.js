@@ -346,5 +346,7 @@ router.get('/busstopname/line/geocode/plusgeo', f.nearby);
 router.get('/busstopname/line/geocode/plusgeo/clean', f.cleanPlus);
 router.get('/busstop/save/test', f.saveBusInfoToMongoTest);
 router.get('/busstop/save/real', f.saveBusInfoToMongoReal);
+router.get('/busstop/clearlastspace', f.clearLastSpace);
+router.get('/busstop/gentag', f.genTag);
 
 module.exports = router;

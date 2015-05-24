@@ -38,15 +38,15 @@ router.get('/:preDestination/:busStopName/:line', function (req, res){
 				}, function (err){
 					var index = _.indexOf(busStopNames, req.params.busStopName);
 					if(index - req.params.preDestination >= 0){
-						busStopName = busStopNames[index - req.params.preDestination];	
+						busStopName = busStopNames[index - req.params.preDestination];
+						callback(null, busStopName);	
 					}else {
 						res.jsonp({
 							status: "err",
 							msg: "please select real predestination bus stop"
 						});
-					}	
-					callback(null, busStopName);
-				})
+					}						
+				});
 			});
 		},
 		function (busStopName, callback){
@@ -55,13 +55,13 @@ router.get('/:preDestination/:busStopName/:line', function (req, res){
 				if(err) res.jsonp(err);
 
 				if(busStop){
-					var tag = busStop[0]._id;
-					callback(null, tag);
+					var alarm = busStop[0].tag;
+					callback(null, alarm);
 				} 
 			})
 		}
 	], function (err, result){
-		res.jsonp({ tag: result });
+		res.jsonp({ alarm: result });
 	});
 });
 

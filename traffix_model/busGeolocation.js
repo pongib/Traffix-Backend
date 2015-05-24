@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 
 var busGeoSchema = mongoose.Schema({
 	userId: String,
-	line: Number,
+	line: String,
 	accuracy: Number,
 	speed: Number,
 	loc: {
