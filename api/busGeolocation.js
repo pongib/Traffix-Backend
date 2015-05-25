@@ -57,6 +57,16 @@ router.get('/all', function (req, res) {
 	// 		"tag": ["54fff522ea4818acc35289ef"]
 	// }
 
+
+router.use('/', function (req, res, next){	
+	res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    	console.log("xx");
+    next();
+});
+
 router.post('/', function (req, res, next){
 	// check "", null, undefind, false, 0, NaN
 	if(!req.body.userId){
