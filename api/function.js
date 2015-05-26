@@ -6,11 +6,121 @@ var request =   require('request');
 var crypto  =	require('crypto'); 	
 var BusTest = 	require('../traffix_model/busTest');
 var BusStop =  	require('../traffix_model/busStop');
+var BusGeo = require('../traffix_model/busGeolocation');
 
 exports.print = function (req, res){
 	console.log("x");
 	res.send("x");
 };
+
+exports.findFill = function (req, res){
+	
+	// var origin = req.params.origin.split(',');
+	async.waterfall([
+		function (callback){
+			BusStop.find({ name: req.params.origin })
+			.exec(function (err, busStop){
+				if(err){
+					res.jsonp({
+						status: 'ERROR',
+						msg: 'cannot find bus stop result and ' + err
+					});
+				}
+				if(busStop){
+					if(busStop.length >= 1){
+						var originGeo = busStop[0].loc.coordinates;
+						var tag = busStop[0].tag;
+						// res.send(originGeo);
+						callback(null, originGeo, tag);
+					}else {
+						res.jsonp({
+							status: 'ERROR',
+							msg: 'cannot find bus stop result'
+						});
+					}
+				}				
+			});			
+		},
+		// function (busStop, callback){
+		// 	var _dest = "", temp = "", tag = [];
+		// 	async.each(busStop, function (entry, callback){
+		// 		//make coordinates to string and split it into array of string
+		// 		temp = String(entry.loc.coordinates).split(',');
+		// 		// make bus stop string and set last bus stop with no '|'
+		// 		if(entry != busStop[busStop.length - 1]){
+		// 			_dest += temp[1]+','+temp[0]+'|';
+		// 		}else _dest += temp[1]+','+temp[0];
+
+		// 		if(entry.tag){
+		// 			tag.push(entry.tag);
+		// 		}
+
+					
+		// 		callback();
+		// 		// console.log(_dest);
+		// 	}, function (err) {			
+		// 		callback(null, _dest, tag);
+		// 	});
+		// }
+		function (busStop, tags, callback){
+			console.log(tags);
+
+			var busStopJson = [], busStopGeo = busStop[1]+','+busStop[0]; 
+			BusGeo.find().and([{ line: req.params.line }, { tag : { $ne : tags }}])
+			.where('accuracy').lte(10).sort({accuracy: 'asc'}).limit(1)
+			.exec(function (err, first){
+				if(err) {
+					res.jsonp({
+						status: 'ERROR',
+						msg: 'cannot find bus geo result and ' + err
+					});
+				}
+				if(first.length >= 1){
+					var currentBus = first[0].loc.coordinates[1]+','+first[0].loc.coordinates[0];
+					console.log("currentBus = "+currentBus+" busStopGeo = "+busStopGeo);
+
+					// busStop.split('|').forEach(function (entry){
+					// 	busStopJson.push(JSON.parse('{ "lat": '+entry.split(',')[0]+', "lng": '+entry.split(',')[1]+'}'));
+					// });
+					// res.send(result);	
+					gm.distance(
+					currentBus, //origin
+					busStopGeo,  //destination is bus stip
+					function (err, estimate){
+					  if(err) {
+					  	res.jsonp({
+							status: 'ERROR',
+							msg: 'cannot find bus stop result and ' + err
+						});				
+					  }
+					  // res.send(estimate); 
+					  if(estimate){
+					  	if(estimate.status == "OK"){
+						  	var _estimate = {
+							  	status: estimate.status,
+							  	line: parseInt(req.params.line),
+							  	origin: currentBus,
+							  	busstop: busStopGeo,					  	
+							  	estimate: estimate.rows[0].elements
+						  	};
+							callback(null, _estimate);
+						 }else res.jsonp(estimate);		
+					  }else {
+					  	res.jsonp({
+							status: 'ERROR',
+							msg: 'cannot estimate the time'
+						});		
+					  }
+					}, false, "transit");
+				}				
+			});
+		}
+	], 	function (err, results){
+		if (err) res.jsonp(err);
+		
+		res.jsonp(results);
+	});
+}
 
 exports.genTag = function (req, res){
 	async.waterfall([
