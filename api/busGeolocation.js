@@ -160,7 +160,7 @@ router.post('/', function (req, res, next){
 							coordinates: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
 							type: 'Point'
 						},
-						maxDistance: 100,
+						maxDistance: 300,
 						spherical: true
 					}).exec(function (err, result){
 						if(err) res.jsonp(err);
@@ -217,7 +217,15 @@ router.post('/', function (req, res, next){
 	// 		"date": 1426567532014,
 	// 		"tag": ["54fff522ea4818acc35289ef", "54fff53fea4818acc35289f0"]
 	// }
-
+router.post('/', function (req, res, next){
+	if(req.body.jap){
+		console.log('ssss');
+		res.send("kuy");
+	}else{
+		next();
+	}
+	
+});
 
 router.post('/', function (req, res, next){	
 	// if line is set imply that user on the bus

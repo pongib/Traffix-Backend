@@ -431,7 +431,7 @@ router.get('/nearest/:position', function (req, res){
 			coordinates: [parseFloat(position[1]), parseFloat(position[0])],
 			type: 'Point'
 		},
-		maxDistance: 100,
+		maxDistance: 300,
 		spherical: true
 	}).exec(function (err, result){
 		if(err) {
