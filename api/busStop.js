@@ -83,7 +83,7 @@ router.delete('/:id', function (req, res){
 // -------------END Manage Database -----------------------//
 
 //query bus stop with line
-router.get('/:busline', function (req, res){
+router.get('/find/:busline', function (req, res){
 	BusStop
 	.find({ line: req.params.busline })
 	.exec(function (err, busStop){
