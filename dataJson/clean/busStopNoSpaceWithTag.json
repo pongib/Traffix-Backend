@@ -56895,38 +56895,6 @@
         "tag": "c0500e0b43946718fdb29a9cdbfe8907"
     },
     {
-        "name": "ประชาอุทิศ ซอย 42",
-        "line": [
-            "21",
-            "88"
-        ],
-        "place_location": {
-            "lat": 13.6518677,
-            "lng": 100.4967348
-        },
-        "bus_station_location": {
-            "lat": 13.650731,
-            "lng": 100.496544
-        },
-        "tag": "f0fadb8c20f7086def7999395e7f3e42"
-    },
-    {
-        "name": "ประชาอุทิศ ซอย 40",
-        "line": [
-            "21",
-            "88"
-        ],
-        "place_location": {
-            "lat": 13.6518674,
-            "lng": 100.4967348
-        },
-        "bus_station_location": {
-            "lat": 13.650731,
-            "lng": 100.496544
-        },
-        "tag": "f77bba97c3d1fbeaf43346c5bf29c4e5"
-    },
-    {
         "name": "ประชาอุทิศ ซอย 36",
         "line": [
             "21",
